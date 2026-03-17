@@ -1,0 +1,633 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Carta de Smith — RF Pro</title>
+<style>
+:root {
+  --font-sans: 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Consolas', 'Courier New', monospace;
+  --color-background-primary: #ffffff;
+  --color-background-secondary: #f5f4f0;
+  --color-background-tertiary: #eeece6;
+  --color-background-info: #e6f1fb;
+  --color-background-success: #eaf3de;
+  --color-background-warning: #faeeda;
+  --color-background-danger: #fcebeb;
+  --color-text-primary: #1a1a18;
+  --color-text-secondary: #5f5e5a;
+  --color-text-tertiary: #888780;
+  --color-text-info: #185fa5;
+  --color-text-success: #3b6d11;
+  --color-text-warning: #854f0b;
+  --color-text-danger: #a32d2d;
+  --color-border-tertiary: rgba(0,0,0,0.12);
+  --color-border-secondary: rgba(0,0,0,0.22);
+  --color-border-primary: rgba(0,0,0,0.35);
+  --color-border-info: rgba(24,95,165,0.4);
+  --color-border-success: rgba(59,109,17,0.4);
+  --color-border-warning: rgba(133,79,11,0.4);
+  --color-border-danger: rgba(163,45,45,0.4);
+  --border-radius-md: 8px;
+  --border-radius-lg: 12px;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --color-background-primary: #1a1a18;
+    --color-background-secondary: #222220;
+    --color-background-tertiary: #2a2a28;
+    --color-background-info: #042c53;
+    --color-background-success: #173404;
+    --color-background-warning: #412402;
+    --color-background-danger: #501313;
+    --color-text-primary: #e8e6de;
+    --color-text-secondary: #b4b2a9;
+    --color-text-tertiary: #888780;
+    --color-text-info: #85b7eb;
+    --color-text-success: #97c459;
+    --color-text-warning: #ef9f27;
+    --color-text-danger: #f09595;
+    --color-border-tertiary: rgba(255,255,255,0.1);
+    --color-border-secondary: rgba(255,255,255,0.2);
+    --color-border-primary: rgba(255,255,255,0.32);
+    --color-border-info: rgba(133,183,235,0.35);
+    --color-border-success: rgba(151,196,89,0.35);
+    --color-border-warning: rgba(239,159,39,0.35);
+    --color-border-danger: rgba(240,149,149,0.35);
+  }
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;background:var(--color-background-primary);color:var(--color-text-primary)}
+body{font-family:var(--font-sans);font-size:13px}
+.app{display:flex;flex-direction:column;min-height:100vh}
+.topbar{display:flex;align-items:center;gap:0;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)}
+.tb-tab{padding:8px 13px;font-size:11px;font-weight:500;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;white-space:nowrap;transition:color .15s}
+.tb-tab.active{color:var(--color-text-info);border-bottom-color:var(--color-text-info);background:var(--color-background-primary)}
+.tb-sep{width:0.5px;height:20px;background:var(--color-border-tertiary);margin:0 2px}
+.tb-right{margin-left:auto;display:flex;align-items:center;gap:6px;padding:0 10px}
+.badge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--color-background-info);color:var(--color-text-info);font-weight:500}
+.module{display:none;flex-direction:column}
+.module.active{display:flex}
+.two-col{display:grid;grid-template-columns:1fr 240px;min-height:520px}
+.chart-wrap{position:relative;padding:10px;display:flex;align-items:center;justify-content:center}
+canvas{display:block;cursor:crosshair;border-radius:6px;background:var(--color-background-secondary)}
+#tip{position:absolute;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:5px 9px;font-size:11px;pointer-events:none;display:none;z-index:10;max-width:160px}
+.side-panel{border-left:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow-y:auto;max-height:580px}
+.sp-tabs{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);flex-shrink:0}
+.sp-tab{flex:1;text-align:center;font-size:10px;padding:6px 2px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-0.5px;white-space:nowrap}
+.sp-tab.active{color:var(--color-text-info);border-bottom-color:var(--color-text-info)}
+.sp-body{flex:1;overflow-y:auto}
+.sp-tc{display:none;flex-direction:column}
+.sp-tc.active{display:flex}
+.ibar{display:flex;flex-wrap:wrap;align-items:flex-end;gap:7px;padding:8px 12px;border-bottom:0.5px solid var(--color-border-tertiary);background:var(--color-background-secondary)}
+.ig{display:flex;flex-direction:column;gap:3px}
+.ig label{font-size:10px;color:var(--color-text-secondary);font-weight:500;text-transform:uppercase;letter-spacing:.3px}
+.ig input,.ig select{height:30px;padding:0 7px;font-size:12px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-primary);font-family:var(--font-mono)}
+.ig input{width:82px}
+.ig select{width:auto;font-family:var(--font-sans)}
+.ig input:focus,.ig select:focus{outline:none;border-color:var(--color-border-info)}
+.ig input.err{border-color:var(--color-border-danger)}
+.btn-pri{height:30px;padding:0 13px;font-size:12px;font-weight:500;border:0.5px solid var(--color-border-info);border-radius:6px;background:var(--color-background-info);color:var(--color-text-info);cursor:pointer;white-space:nowrap}
+.btn-pri:hover{opacity:.8}
+.btn-sec{height:28px;padding:0 9px;font-size:11px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:transparent;color:var(--color-text-secondary);cursor:pointer}
+.btn-sec:hover{background:var(--color-background-secondary)}
+.err-msg{font-size:11px;color:var(--color-text-danger)}
+.sec{padding:9px 11px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.sec h3{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.metric{display:flex;justify-content:space-between;align-items:baseline;padding:2px 0;border-bottom:0.5px solid var(--color-border-tertiary)}
+.metric:last-child{border-bottom:none}
+.ml{font-size:11px;color:var(--color-text-secondary)}
+.mv{font-size:11px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary)}
+.mv.hi{color:var(--color-text-info)}.mv.ok{color:var(--color-text-success)}.mv.wa{color:var(--color-text-warning)}.mv.ba{color:var(--color-text-danger)}
+.pt{display:flex;align-items:flex-start;gap:6px;padding:5px 10px;border-bottom:0.5px solid var(--color-border-tertiary);font-size:10px;cursor:pointer}
+.pt:hover{background:var(--color-background-secondary)}
+.pt.sel{background:var(--color-background-info)}
+.pt-dot{width:8px;height:8px;border-radius:50%;margin-top:2px;flex-shrink:0}
+.pt-body{flex:1;color:var(--color-text-secondary);line-height:1.5;font-family:var(--font-mono);font-size:10px}
+.pt-rm{color:var(--color-text-tertiary);font-size:13px;cursor:pointer;margin-left:auto}
+.pt-rm:hover{color:var(--color-text-danger)}
+.match-layout{display:grid;grid-template-columns:1fr 260px;min-height:520px}
+.match-ctrl{border-left:0.5px solid var(--color-border-tertiary);overflow-y:auto;padding:0}
+.match-step{padding:8px 11px;border-bottom:0.5px solid var(--color-border-tertiary)}
+.match-step h3{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
+.stag{display:inline-block;font-size:10px;padding:2px 7px;border-radius:20px;margin:2px;cursor:pointer;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary);background:transparent}
+.stag.on{background:var(--color-background-success);color:var(--color-text-success);border-color:var(--color-border-success)}
+.result-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:8px 11px}
+.rcard{background:var(--color-background-secondary);border-radius:6px;padding:8px 10px}
+.rcard .rl{font-size:10px;color:var(--color-text-secondary);margin-bottom:2px}
+.rcard .rv{font-size:13px;font-weight:500;color:var(--color-text-primary);font-family:var(--font-mono)}
+.freq-layout{display:grid;grid-template-columns:1fr 260px;min-height:520px}
+.freq-ctrl{border-left:0.5px solid var(--color-border-tertiary);overflow-y:auto}
+.swr-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:12px}
+.swr-card{background:var(--color-background-secondary);border-radius:8px;padding:10px 12px;border:0.5px solid var(--color-border-tertiary)}
+.swr-card h4{font-size:10px;font-weight:500;text-transform:uppercase;letter-spacing:.3px;color:var(--color-text-tertiary);margin-bottom:8px}
+.swr-big{font-size:22px;font-weight:500;font-family:var(--font-mono);color:var(--color-text-primary)}
+.swr-sub{font-size:11px;color:var(--color-text-secondary);margin-top:2px}
+.prog-bar{height:6px;border-radius:3px;background:var(--color-border-tertiary);margin-top:6px;overflow:hidden}
+.prog-fill{height:100%;border-radius:3px;transition:width .3s}
+.statusbar{padding:4px 12px;border-top:0.5px solid var(--color-border-tertiary);font-size:10px;color:var(--color-text-tertiary);display:flex;gap:14px;flex-shrink:0}
+.ltag{display:inline-block;font-size:10px;padding:2px 8px;border-radius:20px;margin:2px;cursor:pointer;border:0.5px solid var(--color-border-secondary);color:var(--color-text-secondary)}
+.ltag.on{background:var(--color-background-info);color:var(--color-text-info);border-color:var(--color-border-info)}
+.guide-content{padding:10px 12px;font-size:11px;color:var(--color-text-secondary);line-height:1.7}
+.guide-content b{font-weight:500;color:var(--color-text-primary)}
+.formula{background:var(--color-background-secondary);border-radius:6px;padding:7px 10px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-secondary);margin:5px 0;line-height:1.8}
+@media(max-width:600px){
+  .two-col,.match-layout,.freq-layout{grid-template-columns:1fr}
+  .side-panel,.match-ctrl,.freq-ctrl{border-left:none;border-top:0.5px solid var(--color-border-tertiary);max-height:300px}
+  .swr-cards{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+<div class="app">
+<div class="topbar">
+  <div class="tb-tab active" onclick="switchModule('main',this)" title="Carta de Smith principal con entrada de impedancia">Carta de Smith</div>
+  <div class="tb-sep"></div>
+  <div class="tb-tab" onclick="switchModule('match',this)" title="Calcula redes de adaptación de impedancia (L, stub, quarter-wave)">Adaptación</div>
+  <div class="tb-sep"></div>
+  <div class="tb-tab" onclick="switchModule('freq',this)" title="Traza la trayectoria de impedancia en función de la frecuencia">Barrido en freq.</div>
+  <div class="tb-sep"></div>
+  <div class="tb-tab" onclick="switchModule('swr',this)" title="Panel de parámetros: ROE, Γ, RL, VSWR, potencias">Panel ROE/RL</div>
+  <div class="tb-sep"></div>
+  <div class="tb-tab" onclick="switchModule('tline',this)" title="Desplaza una impedancia a lo largo de una línea de transmisión">Línea de trans.</div>
+  <div class="tb-right"><span class="badge">RF PRO</span></div>
+</div>
+
+<!-- MODULE 1: SMITH CHART MAIN -->
+<div id="mod-main" class="module active">
+  <div class="ibar">
+    <div class="ig"><label>Modo</label>
+      <select id="inp-mode" onchange="onModeChange()">
+        <option value="z">Z — R+jX (Ω)</option>
+        <option value="y">Y — G+jB (S)</option>
+        <option value="gamma">Γ — a+jb</option>
+        <option value="rl">Return Loss (dB)</option>
+        <option value="vswr">ROE / VSWR</option>
+      </select>
+    </div>
+    <div class="ig"><label id="lbl-a">R (Ω)</label><input type="number" id="inp-a" value="75" step="any" oninput="clearE()"></div>
+    <div class="ig" id="grp-b"><label id="lbl-b">X (Ω)</label><input type="number" id="inp-b" value="25" step="any" oninput="clearE()"></div>
+    <div class="ig"><label>Z₀ (Ω)</label><input type="number" id="inp-z0" value="50" step="5" min="1" oninput="z0change()"></div>
+    <div class="ig"><label>Frec. (MHz)</label><input type="number" id="inp-freq" value="1000" step="any" min="0.001"></div>
+    <button class="btn-pri" onclick="plotMain()">Ubicar</button>
+    <button class="btn-sec" onclick="clearAll()">Limpiar</button>
+    <span class="err-msg" id="err"></span>
+  </div>
+  <div class="two-col">
+    <div class="chart-wrap">
+      <canvas id="sc"></canvas>
+      <div id="tip"></div>
+    </div>
+    <div class="side-panel">
+      <div class="sp-tabs">
+        <div class="sp-tab active" onclick="spTab('res',this)">Resultados</div>
+        <div class="sp-tab" onclick="spTab('pts',this)">Puntos</div>
+        <div class="sp-tab" onclick="spTab('layers',this)">Capas</div>
+        <div class="sp-tab" onclick="spTab('ref',this)">Ref.</div>
+      </div>
+      <div class="sp-body">
+        <div id="spt-res" class="sp-tc active">
+          <div class="sec"><h3>Impedancia</h3>
+            <div class="metric"><span class="ml">Z (Ω)</span><span class="mv hi" id="r-z">—</span></div>
+            <div class="metric"><span class="ml">z normalizada</span><span class="mv" id="r-zn">—</span></div>
+            <div class="metric"><span class="ml">R (Ω)</span><span class="mv" id="r-r">—</span></div>
+            <div class="metric"><span class="ml">X (Ω)</span><span class="mv" id="r-x">—</span></div>
+          </div>
+          <div class="sec"><h3>Admitancia</h3>
+            <div class="metric"><span class="ml">Y (mS)</span><span class="mv" id="r-y">—</span></div>
+            <div class="metric"><span class="ml">G (mS)</span><span class="mv" id="r-g">—</span></div>
+            <div class="metric"><span class="ml">B (mS)</span><span class="mv" id="r-b">—</span></div>
+          </div>
+          <div class="sec"><h3>Reflexión Γ</h3>
+            <div class="metric"><span class="ml">Γ complejo</span><span class="mv" id="r-gc">—</span></div>
+            <div class="metric"><span class="ml">|Γ|</span><span class="mv" id="r-gm">—</span></div>
+            <div class="metric"><span class="ml">∠Γ</span><span class="mv" id="r-ga">—</span></div>
+          </div>
+          <div class="sec"><h3>Parámetros de línea</h3>
+            <div class="metric"><span class="ml">ROE / VSWR</span><span class="mv" id="r-vswr">—</span></div>
+            <div class="metric"><span class="ml">Return Loss</span><span class="mv" id="r-rl">—</span></div>
+            <div class="metric"><span class="ml">Mismatch Loss</span><span class="mv" id="r-ml">—</span></div>
+            <div class="metric"><span class="ml">Pᵣ reflejada</span><span class="mv" id="r-pr">—</span></div>
+            <div class="metric"><span class="ml">Pₜ transmitida</span><span class="mv" id="r-pt">—</span></div>
+          </div>
+          <div class="sec"><h3>Componentes equivalentes</h3>
+            <div class="metric"><span class="ml">Frec.</span><span class="mv" id="r-feq">—</span></div>
+            <div class="metric"><span class="ml">L equiv.</span><span class="mv" id="r-lc">—</span></div>
+            <div class="metric"><span class="ml">C equiv.</span><span class="mv" id="r-cc">—</span></div>
+            <div class="metric"><span class="ml">Q factor</span><span class="mv" id="r-q">—</span></div>
+          </div>
+          <div class="sec"><h3>Diagnóstico</h3>
+            <div class="metric"><span class="ml">Zona</span><span class="mv" id="r-zone">—</span></div>
+            <div class="metric"><span class="ml">Tipo</span><span class="mv" id="r-type">—</span></div>
+            <div class="metric"><span class="ml">Adaptación</span><span class="mv" id="r-match">—</span></div>
+          </div>
+        </div>
+        <div id="spt-pts" class="sp-tc">
+          <div id="pts-list" style="flex:1"><div style="padding:12px;font-size:11px;color:var(--color-text-tertiary)">Sin puntos aún</div></div>
+          <div class="sec" style="flex-shrink:0"><button class="btn-sec" style="width:100%" onclick="exportCSV()">Exportar CSV</button></div>
+        </div>
+        <div id="spt-layers" class="sp-tc">
+          <div class="sec"><h3>Capas</h3>
+            <div id="layer-tags">
+              <span class="ltag on" id="ly-r" onclick="toggleL('r',this)">R cte.</span>
+              <span class="ltag on" id="ly-x" onclick="toggleL('x',this)">X cte.</span>
+              <span class="ltag on" id="ly-swr" onclick="toggleL('swr',this)">ROE</span>
+              <span class="ltag on" id="ly-sp" onclick="toggleL('sp',this)">Pts. esp.</span>
+              <span class="ltag on" id="ly-lbl" onclick="toggleL('lbl',this)">Etiquetas</span>
+              <span class="ltag" id="ly-adm" onclick="toggleL('adm',this)">Admitancia</span>
+              <span class="ltag" id="ly-ang" onclick="toggleL('ang',this)">Ángulos Γ</span>
+            </div>
+          </div>
+          <div class="sec"><h3>Círculo ROE</h3>
+            <div style="display:flex;align-items:center;gap:8px">
+              <input type="range" min="1" max="10" step="0.1" value="1" id="swr-sl" oninput="setSWR(this.value)" style="flex:1">
+              <span id="swr-v" style="font-size:11px;font-family:var(--font-mono);min-width:28px">1.0</span>
+            </div>
+          </div>
+          <div class="sec"><h3>Puntos rápidos</h3>
+            <div>
+              <button class="btn-sec" style="margin:2px" onclick="qpt(0,0)">Adaptado</button>
+              <button class="btn-sec" style="margin:2px" onclick="qgamma(-1,0)">CC</button>
+              <button class="btn-sec" style="margin:2px" onclick="qgamma(0.999,0)">CA</button>
+              <button class="btn-sec" style="margin:2px" onclick="qpt(1,1)">1+j</button>
+              <button class="btn-sec" style="margin:2px" onclick="qpt(2,-1)">2−j</button>
+              <button class="btn-sec" style="margin:2px" onclick="qpt(0.5,1.5)">0.5+j1.5</button>
+            </div>
+          </div>
+        </div>
+        <div id="spt-ref" class="sp-tc">
+          <div class="guide-content">
+            <b>Carta de Smith</b> — Plano del coeficiente de reflexión Γ en coordenadas de impedancia normalizada (P.H. Smith, 1939).
+            <div class="formula">z = Z/Z₀ = r + jx<br>Γ = (z−1)/(z+1)<br>ROE = (1+|Γ|)/(1−|Γ|)<br>RL = −20·log|Γ| dB<br>Q = |X|/R</div>
+            <b>Zonas:</b><br>Superior → inductiva (+jX)<br>Inferior → capacitiva (−jX)<br>Izquierda → cortocircuito<br>Derecha → circuito abierto<br>Centro → adaptación perfecta
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE 2: MATCHING -->
+<div id="mod-match" class="module">
+  <div class="ibar">
+    <div class="ig"><label>ZL real (Ω)</label><input type="number" id="m-rl" value="100" step="any"></div>
+    <div class="ig"><label>ZL imag (Ω)</label><input type="number" id="m-xl" value="50" step="any"></div>
+    <div class="ig"><label>Z₀ (Ω)</label><input type="number" id="m-z0" value="50" step="any"></div>
+    <div class="ig"><label>Frec. (MHz)</label><input type="number" id="m-freq" value="1000" step="any"></div>
+    <button class="btn-pri" onclick="calcMatch()">Calcular</button>
+    <button class="btn-sec" onclick="clearMatch()">Limpiar</button>
+  </div>
+  <div class="match-layout">
+    <div class="chart-wrap"><canvas id="sc2"></canvas></div>
+    <div class="match-ctrl">
+      <div class="match-step">
+        <h3>Red de adaptación</h3>
+        <div>
+          <span class="stag on" id="mt-l" onclick="setMT('l',this)">Red-L</span>
+          <span class="stag" id="mt-stub" onclick="setMT('stub',this)">Stub serie</span>
+          <span class="stag" id="mt-qw" onclick="setMT('qw',this)">λ/4 transform.</span>
+        </div>
+      </div>
+      <div id="match-results"><div style="padding:12px;font-size:11px;color:var(--color-text-tertiary)">Ingresa ZL y presiona Calcular</div></div>
+      <div class="result-grid" id="match-cards" style="display:none">
+        <div class="rcard"><div class="rl">Elemento 1</div><div class="rv" id="mc-e1">—</div></div>
+        <div class="rcard"><div class="rl">Elemento 2</div><div class="rv" id="mc-e2">—</div></div>
+        <div class="rcard"><div class="rl">BW estimado</div><div class="rv" id="mc-bw">—</div></div>
+        <div class="rcard"><div class="rl">Q de la red</div><div class="rv" id="mc-q">—</div></div>
+        <div class="rcard"><div class="rl">RL después</div><div class="rv" id="mc-rl">—</div></div>
+        <div class="rcard"><div class="rl">Topología</div><div class="rv" id="mc-top">—</div></div>
+      </div>
+      <div class="sec">
+        <h3>Descripción del método</h3>
+        <div class="guide-content" id="match-desc" style="padding:0">Selecciona un tipo de red.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE 3: FREQUENCY SWEEP -->
+<div id="mod-freq" class="module">
+  <div class="ibar">
+    <div class="ig"><label>R (Ω)</label><input type="number" id="fs-r" value="50" step="any"></div>
+    <div class="ig"><label>Modelo</label>
+      <select id="fs-model" onchange="fsModeChange()">
+        <option value="rl">R + L serie</option>
+        <option value="rc">R + C serie</option>
+        <option value="rlc">RLC serie</option>
+        <option value="par-rl">R ‖ L paralelo</option>
+        <option value="par-rc">R ‖ C paralelo</option>
+      </select>
+    </div>
+    <div class="ig"><label id="fs-lbl1">L (nH)</label><input type="number" id="fs-v1" value="10" step="any"></div>
+    <div class="ig" id="fs-grp2"><label id="fs-lbl2">C (pF)</label><input type="number" id="fs-v2" value="10" step="any"></div>
+    <div class="ig"><label>f ini (MHz)</label><input type="number" id="fs-f1" value="100" step="any"></div>
+    <div class="ig"><label>f fin (MHz)</label><input type="number" id="fs-f2" value="3000" step="any"></div>
+    <div class="ig"><label>Z₀ (Ω)</label><input type="number" id="fs-z0" value="50" step="any"></div>
+    <button class="btn-pri" onclick="runSweep()">Trazar</button>
+    <button class="btn-sec" onclick="clearSweep()">Limpiar</button>
+  </div>
+  <div class="freq-layout">
+    <div class="chart-wrap"><canvas id="sc3"></canvas></div>
+    <div class="freq-ctrl">
+      <div class="sec"><h3>Trayectoria</h3>
+        <div class="metric"><span class="ml">f inicio</span><span class="mv" id="sw-f1">—</span></div>
+        <div class="metric"><span class="ml">f fin</span><span class="mv" id="sw-f2">—</span></div>
+        <div class="metric"><span class="ml">Z @ f ini</span><span class="mv" id="sw-zi">—</span></div>
+        <div class="metric"><span class="ml">Z @ f fin</span><span class="mv" id="sw-zf">—</span></div>
+        <div class="metric"><span class="ml">Z @ resonancia</span><span class="mv" id="sw-zr">—</span></div>
+        <div class="metric"><span class="ml">f resonancia</span><span class="mv" id="sw-fr">—</span></div>
+        <div class="metric"><span class="ml">ROE máx.</span><span class="mv" id="sw-rm">—</span></div>
+        <div class="metric"><span class="ml">ROE mín.</span><span class="mv" id="sw-rmin">—</span></div>
+      </div>
+      <div class="sec"><h3>Guía</h3>
+        <div class="guide-content" style="padding:0;font-size:11px">
+          Traza la trayectoria de impedancia al variar la frecuencia. Útil para verificar antenas, ver autorresonancia de inductores, analizar filtros e identificar resonancias.<br><br>
+          Gradiente: azul = f₁ → rojo = f₂.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE 4: SWR PANEL -->
+<div id="mod-swr" class="module">
+  <div class="ibar">
+    <div class="ig"><label>Modo entrada</label>
+      <select id="swp-mode" onchange="swpModeChange()">
+        <option value="z">Z (R+jX)</option>
+        <option value="gamma">|Γ|</option>
+        <option value="rl">Return Loss dB</option>
+        <option value="vswr">VSWR / ROE</option>
+        <option value="pr">Pᵣ % reflejada</option>
+      </select>
+    </div>
+    <div class="ig"><label id="swp-la">R (Ω)</label><input type="number" id="swp-a" value="75" step="any"></div>
+    <div class="ig" id="swp-gb"><label id="swp-lb">X (Ω)</label><input type="number" id="swp-b" value="0" step="any"></div>
+    <div class="ig"><label>Z₀ (Ω)</label><input type="number" id="swp-z0" value="50" step="any"></div>
+    <div class="ig"><label>Pot. inc. (W)</label><input type="number" id="swp-pin" value="1" step="any" min="0.001"></div>
+    <button class="btn-pri" onclick="calcSWR()">Calcular</button>
+  </div>
+  <div class="swr-cards" id="swr-grid">
+    <div class="swr-card"><h4>ROE / VSWR</h4><div class="swr-big" id="sw-vswr">—</div><div class="swr-sub" id="sw-vswr-s">—</div><div class="prog-bar"><div class="prog-fill" id="sw-vswr-p" style="width:0%;background:#639922"></div></div></div>
+    <div class="swr-card"><h4>|Γ| magnitud</h4><div class="swr-big" id="sw-gm">—</div><div class="swr-sub" id="sw-gm-s">—</div><div class="prog-bar"><div class="prog-fill" id="sw-gm-p" style="width:0%;background:#378add"></div></div></div>
+    <div class="swr-card"><h4>Return Loss</h4><div class="swr-big" id="sw-rl">—</div><div class="swr-sub" id="sw-rl-s">—</div><div class="prog-bar"><div class="prog-fill" id="sw-rl-p" style="width:0%;background:#d85a30"></div></div></div>
+    <div class="swr-card"><h4>Potencia reflejada</h4><div class="swr-big" id="sw-pr">—</div><div class="swr-sub" id="sw-pr-s">—</div><div class="prog-bar"><div class="prog-fill" id="sw-pr-p" style="width:0%;background:#e24b4a"></div></div></div>
+    <div class="swr-card"><h4>Potencia transmitida</h4><div class="swr-big" id="sw-pt">—</div><div class="swr-sub" id="sw-pt-s">—</div><div class="prog-bar"><div class="prog-fill" id="sw-pt-p" style="width:0%;background:#1d9e75"></div></div></div>
+    <div class="swr-card"><h4>Mismatch Loss</h4><div class="swr-big" id="sw-ml">—</div><div class="swr-sub" id="sw-ml-s">—</div><div class="prog-bar"><div class="prog-fill" id="sw-ml-p" style="width:0%;background:#7f77dd"></div></div></div>
+  </div>
+  <div style="padding:0 12px 12px">
+    <div class="sec" style="border:0.5px solid var(--color-border-tertiary);border-radius:8px">
+      <h3>Conversión completa</h3>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:4px">
+        <div class="metric"><span class="ml">Γ (a+jb)</span><span class="mv" id="swr-gc">—</span></div>
+        <div class="metric"><span class="ml">∠Γ</span><span class="mv" id="swr-ga">—</span></div>
+        <div class="metric"><span class="ml">Z (Ω)</span><span class="mv" id="swr-z">—</span></div>
+        <div class="metric"><span class="ml">Y (mS)</span><span class="mv" id="swr-y">—</span></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODULE 5: TRANSMISSION LINE -->
+<div id="mod-tline" class="module">
+  <div class="ibar">
+    <div class="ig"><label>ZL real (Ω)</label><input type="number" id="tl-rl" value="100" step="any"></div>
+    <div class="ig"><label>ZL imag (Ω)</label><input type="number" id="tl-xl" value="50" step="any"></div>
+    <div class="ig"><label>Z₀ (Ω)</label><input type="number" id="tl-z0" value="50" step="any"></div>
+    <div class="ig"><label>Frec. (MHz)</label><input type="number" id="tl-freq" value="1000" step="any"></div>
+    <div class="ig"><label>Long. (mm)</label><input type="number" id="tl-len" value="50" step="any" min="0"></div>
+    <div class="ig"><label>εᵣ</label><input type="number" id="tl-er" value="1" step="0.1" min="1"></div>
+    <div class="ig"><label>α (dB/m)</label><input type="number" id="tl-att" value="0" step="0.1" min="0"></div>
+    <button class="btn-pri" onclick="calcTline()">Calcular</button>
+  </div>
+  <div class="two-col">
+    <div class="chart-wrap"><canvas id="sc4"></canvas></div>
+    <div class="side-panel">
+      <div class="sp-tabs">
+        <div class="sp-tab active" onclick="tlTab('res',this)">Resultados</div>
+        <div class="sp-tab" onclick="tlTab('info',this)">Info</div>
+      </div>
+      <div class="sp-body">
+        <div id="tlt-res" class="sp-tc active">
+          <div class="sec"><h3>Línea de transmisión</h3>
+            <div class="metric"><span class="ml">λ @ freq.</span><span class="mv" id="tl-lam">—</span></div>
+            <div class="metric"><span class="ml">Longitud eléctrica</span><span class="mv" id="tl-elen">—</span></div>
+            <div class="metric"><span class="ml">βl (rad)</span><span class="mv" id="tl-bl">—</span></div>
+            <div class="metric"><span class="ml">τ retardo</span><span class="mv" id="tl-tau">—</span></div>
+          </div>
+          <div class="sec"><h3>Impedancia entrada Zin</h3>
+            <div class="metric"><span class="ml">Zin (Ω)</span><span class="mv hi" id="tl-zin">—</span></div>
+            <div class="metric"><span class="ml">Rin</span><span class="mv" id="tl-rin">—</span></div>
+            <div class="metric"><span class="ml">Xin</span><span class="mv" id="tl-xin">—</span></div>
+            <div class="metric"><span class="ml">|Γin|</span><span class="mv" id="tl-gin">—</span></div>
+            <div class="metric"><span class="ml">VSWR entrada</span><span class="mv" id="tl-vin">—</span></div>
+            <div class="metric"><span class="ml">RL entrada</span><span class="mv" id="tl-rlin">—</span></div>
+          </div>
+          <div class="sec"><h3>Parámetros en ZL</h3>
+            <div class="metric"><span class="ml">|ΓL|</span><span class="mv" id="tl-gl">—</span></div>
+            <div class="metric"><span class="ml">VSWR @ ZL</span><span class="mv" id="tl-vl">—</span></div>
+            <div class="metric"><span class="ml">RL @ ZL</span><span class="mv" id="tl-rll">—</span></div>
+          </div>
+          <div class="sec"><h3>Transformaciones especiales</h3>
+            <div class="metric"><span class="ml">λ/4 → Zin</span><span class="mv" id="tl-q4">—</span></div>
+            <div class="metric"><span class="ml">λ/2 → Zin</span><span class="mv" id="tl-h2">—</span></div>
+          </div>
+        </div>
+        <div id="tlt-info" class="sp-tc">
+          <div class="guide-content">
+            <b>Línea de transmisión</b><br>Calcula Zin de una línea de longitud l terminada en ZL.
+            <div class="formula">Zin = Z₀·(ZL+jZ₀·tan βl)/(Z₀+jZL·tan βl)<br>β = 2π/λ, λ = c/(f·√εᵣ)</div>
+            λ/4: Zin = Z₀²/ZL<br>λ/2: Zin = ZL (línea transparente)
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="statusbar">
+  <span id="st-mod">Carta de Smith</span>
+  <span id="st-z0s">Z₀ = 50 Ω</span>
+  <span id="st-pos">—</span>
+  <span id="st-n">0 puntos</span>
+</div>
+</div>
+
+<script>
+const PI=Math.PI,C0=3e8;
+let Z0=50,swrVal=1,points=[],selPt=-1;
+let layers={r:true,x:true,swr:true,sp:true,lbl:true,adm:false,ang:false};
+let isDark=matchMedia('(prefers-color-scheme: dark)').matches;
+let matchType='l';
+const COLS=['#1d9e75','#534ab7','#d85a30','#ba7517','#d4537e','#378add','#e24b4a','#3b6d11'];
+let ctxs={},dims={};
+
+function setupCanvas(id){
+  const c=document.getElementById(id);if(!c)return;
+  const wrap=c.parentElement;
+  const s=Math.min(wrap.clientWidth-20,wrap.clientHeight||520,500);
+  c.width=s;c.height=s;
+  dims[id]={W:s,H:s,cx:s/2,cy:s/2,R:s*0.43};
+  ctxs[id]=c.getContext('2d');
+  return ctxs[id];
+}
+function getD(id){return dims[id]||{W:400,H:400,cx:200,cy:200,R:172};}
+function z2g(rn,xn){const d=(rn+1)**2+xn**2;if(d<1e-12)return{r:1,i:0};return{r:((rn**2+xn**2)-1)/d,i:(2*xn)/d};}
+function g2z(gr,gi){const d=(1-gr)**2+gi**2;if(d<1e-9)return{r:1e9,x:0};return{r:(1-gr**2-gi**2)/d,i:(2*gi)/d};}
+function g2c(id,gr,gi){const{cx,cy,R}=getD(id);return{x:cx+gr*R,y:cy-gi*R};}
+function c2g(id,px,py){const{cx,cy,R}=getD(id);return{r:(px-cx)/R,i:(cy-py)/R};}
+function inside(id,px,py){const{cx,cy,R}=getD(id);return Math.hypot(px-cx,py-cy)<=R+2;}
+function f(n,d=3){if(!isFinite(n)||Math.abs(n)>99999)return'∞';return(+n).toFixed(d);}
+function fz(r,x){const xs=x>=0?`+j${f(x,2)}`:`−j${f(Math.abs(x),2)}`;return`${f(r,2)}${xs}`;}
+function calcParams(gr,gi){
+  const mag=Math.min(Math.hypot(gr,gi),1),ang=Math.atan2(gi,gr)*180/PI;
+  const z=g2z(gr,gi),rAbs=z.r*Z0,xAbs=z.i*Z0;
+  const vswr=mag<0.9999?(1+mag)/(1-mag):9999;
+  const rl=mag>1e-5?-20*Math.log10(mag):99.9;
+  const pr=mag**2*100,pt=Math.max(0,(1-mag**2)*100);
+  const ml=pt>0.001?-10*Math.log10(pt/100):99.9;
+  const den=rAbs**2+xAbs**2;
+  const G=den>1e-10?rAbs/den:0,B=den>1e-10?-xAbs/den:0;
+  return{gr,gi,mag,ang,z,rAbs,xAbs,vswr,rl,pr,pt,ml,G,B};
+}
+function getC(){
+  return{
+    bg:isDark?'#1a1a18':'#f5f4f0',fg:isDark?'#c2c0b6':'#3d3d3a',fg2:isDark?'#666460':'#888780',
+    rC:isDark?'rgba(55,138,221,0.5)':'rgba(55,138,221,0.65)',
+    xC:isDark?'rgba(216,90,48,0.45)':'rgba(216,90,48,0.6)',
+    admC:isDark?'rgba(93,202,165,0.3)':'rgba(15,110,86,0.35)',
+    swr:isDark?'rgba(29,158,117,0.65)':'rgba(15,110,86,0.7)',
+    bnd:isDark?'rgba(255,255,255,0.22)':'rgba(0,0,0,0.35)',
+    ang:isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.07)',
+  };
+}
+function drawSmith(cid,extraFn){
+  const ctx=ctxs[cid];if(!ctx)return;
+  const{W,H,cx,cy,R}=getD(cid);const c=getC();
+  ctx.clearRect(0,0,W,H);
+  ctx.beginPath();ctx.arc(cx,cy,R,0,PI*2);ctx.fillStyle=c.bg;ctx.fill();
+  if(layers.ang){[30,60,90,120,150,180].forEach(a=>{const rad=a*PI/180;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(-rad),cy+R*Math.sin(-rad));ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(rad),cy+R*Math.sin(rad));ctx.strokeStyle=c.ang;ctx.lineWidth=0.5;ctx.stroke();});}
+  if(layers.r){[0,0.2,0.5,1,2,5].forEach(rn=>{const cr=R/(1+rn),ccx=cx+R-cr;ctx.beginPath();ctx.arc(ccx,cy,cr,0,PI*2);ctx.strokeStyle=c.rC;ctx.lineWidth=rn===1?1.2:0.6;ctx.setLineDash([]);ctx.stroke();});}
+  if(layers.x){[0.2,0.5,1,2,5].forEach(xn=>{[1,-1].forEach(sg=>{const rx=R/xn,cy2=cy-sg*(R+rx);ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,PI*2);ctx.clip();ctx.beginPath();ctx.arc(cx+R,cy2,rx,0,PI*2);ctx.strokeStyle=c.xC;ctx.lineWidth=xn===1?0.9:0.55;ctx.stroke();ctx.restore();});});ctx.strokeStyle=c.ang;ctx.lineWidth=0.7;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.stroke();ctx.setLineDash([]);}
+  if(layers.adm){[0,0.2,0.5,1,2,5].forEach(rn=>{const cr=R/(1+rn),ccx=cx-R+cr;ctx.beginPath();ctx.arc(ccx,cy,cr,0,PI*2);ctx.strokeStyle=c.admC;ctx.lineWidth=0.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);});}
+  if(layers.swr&&swrVal>1.001){const gm=(swrVal-1)/(swrVal+1);ctx.beginPath();ctx.arc(cx,cy,gm*R,0,PI*2);ctx.strokeStyle=c.swr;ctx.lineWidth=1.3;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);if(layers.lbl){ctx.fillStyle=c.swr;ctx.font=`500 9px var(--font-sans,sans-serif)`;ctx.textAlign='center';ctx.fillText(`ROE ${parseFloat(swrVal).toFixed(1)}`,cx,cy-gm*R-4);}}
+  ctx.beginPath();ctx.arc(cx,cy,R,0,PI*2);ctx.strokeStyle=c.bnd;ctx.lineWidth=1.5;ctx.stroke();
+  if(layers.lbl){ctx.font=`400 9px var(--font-sans,sans-serif)`;ctx.fillStyle=c.fg2;[0,0.2,0.5,1,2,5].forEach(rn=>{const p=g2c(cid,z2g(rn,0).r,0);ctx.textAlign='center';ctx.fillText(rn===0?'0':rn.toString(),p.x,cy+12);});[0.5,1,2].forEach(xn=>{[1,-1].forEach(sg=>{const g=z2g(0,xn*sg),p=g2c(cid,g.r,g.i);ctx.textAlign='left';ctx.fillText(`${sg>0?'+':'−'}j${xn}`,p.x+3,p.y);});});ctx.fillStyle=c.fg;ctx.font=`500 9px var(--font-sans,sans-serif)`;ctx.textAlign='center';ctx.fillText('R/Z₀',cx,cy+23);}
+  if(layers.sp){drawDot(cid,'#ba7517',z2g(0,0),'Z₀',c);drawDot(cid,'#e24b4a',{r:-0.998,i:0},'CC',c);drawDot(cid,'#378add',{r:0.998,i:0},'CA',c);}
+  if(extraFn)extraFn(ctx,getD(cid),c);
+}
+function drawDot(cid,col,g,lbl,c){const ctx=ctxs[cid];const p=g2c(cid,g.r,g.i);ctx.beginPath();ctx.arc(p.x,p.y,4,0,PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.75)';ctx.lineWidth=1;ctx.stroke();if(layers.lbl){ctx.fillStyle=c.fg2;ctx.font=`400 9px var(--font-sans,sans-serif)`;ctx.textAlign='center';ctx.fillText(lbl,p.x,p.y-7);}}
+function drawPoints(cid){const ctx=ctxs[cid];if(!ctx)return;const{cx,cy,R}=getD(cid);const c=getC();points.forEach((pt,i)=>{const col=COLS[i%COLS.length];const p=g2c(cid,pt.g.r,pt.g.i);if(i===selPt||i===points.length-1){const gm=Math.hypot(pt.g.r,pt.g.i);if(gm>0.01){ctx.beginPath();ctx.arc(cx,cy,gm*R,0,PI*2);ctx.strokeStyle=col+'55';ctx.lineWidth=0.8;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);}}ctx.beginPath();ctx.arc(p.x,p.y,5.5,0,PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1.2;ctx.stroke();if(layers.lbl){ctx.fillStyle=col;ctx.font=`500 9px var(--font-sans,sans-serif)`;ctx.textAlign='left';ctx.fillText(`P${i+1}`,p.x+8,p.y-2);}});}
+function onModeChange(){const m=document.getElementById('inp-mode').value;const la=document.getElementById('lbl-a'),lb=document.getElementById('lbl-b');const gb=document.getElementById('grp-b');const a=document.getElementById('inp-a'),b=document.getElementById('inp-b');if(m==='z'){la.textContent='R (Ω)';lb.textContent='X (Ω)';gb.style.display='';a.value=75;b.value=25;}else if(m==='y'){la.textContent='G (mS)';lb.textContent='B (mS)';gb.style.display='';a.value=10;b.value=5;}else if(m==='gamma'){la.textContent='Γ real (a)';lb.textContent='Γ imag (b)';gb.style.display='';a.value=0.2;b.value=0.3;}else if(m==='rl'){la.textContent='RL (dB)';gb.style.display='none';a.value=15;}else if(m==='vswr'){la.textContent='VSWR';gb.style.display='none';a.value=2;}clearE();}
+function plotMain(){const m=document.getElementById('inp-mode').value;const av=parseFloat(document.getElementById('inp-a').value);const bv=parseFloat(document.getElementById('inp-b').value)||0;let gr,gi;clearE();if(m==='z'){if(isNaN(av)||av<0)return er('R ≥ 0');if(isNaN(bv))return er('X inválido');const g=z2g(av/Z0,bv/Z0);gr=g.r;gi=g.i;}else if(m==='y'){if(isNaN(av)||av<0)return er('G ≥ 0 mS');const Zmag=av*av*1e-6+(bv||0)*(bv||0)*1e-6;if(Zmag<1e-20)return er('Admitancia = 0: circuito abierto');const Zr=av*1e-3/((av*av+bv*bv)*1e-6),Zi=-(bv||0)*1e-3/((av*av+bv*bv)*1e-6);const g=z2g(Zr/Z0,Zi/Z0);gr=g.r;gi=g.i;}else if(m==='gamma'){if(isNaN(av)||isNaN(bv))return er('Valores inválidos');if(Math.hypot(av,bv)>1.001)return er('|Γ| debe ser ≤ 1');gr=av;gi=bv;}else if(m==='rl'){if(isNaN(av)||av<0)return er('RL ≥ 0 dB');gr=Math.pow(10,-av/20);gi=0;}else if(m==='vswr'){if(isNaN(av)||av<1)return er('VSWR ≥ 1');gr=(av-1)/(av+1);gi=0;}if(!isFinite(gr)||!isFinite(gi))return er('Resultado no finito');const mag=Math.hypot(gr,gi);if(mag>1){gr/=mag;gi/=mag;}const freq=parseFloat(document.getElementById('inp-freq').value)||1000;if(freq<=0)return er('Frecuencia > 0');addPt(gr,gi,freq);}
+function addPt(gr,gi,freq){const p=calcParams(gr,gi);p.freq=freq;points.push({g:{r:gr,i:gi},p,freq});selPt=points.length-1;swrVal=Math.min(p.vswr,10);document.getElementById('swr-sl').value=swrVal;document.getElementById('swr-v').textContent=f(swrVal,2);showRes(p,freq);updatePtsList();redrawMain();}
+function showRes(p,freq){const{gr,gi,mag,ang,z,rAbs,xAbs,vswr,rl,pr,pt,ml,G,B}=p;s('r-z',fz(rAbs,xAbs)+' Ω');s('r-zn',fz(z.r,z.i));s('r-r',`${f(rAbs,2)} Ω`);s('r-x',`${xAbs>=0?'+':''}${f(xAbs,2)} Ω`);const ymag=Math.hypot(G,B)*1000;s('r-y',`${f(ymag,3)} mS`);s('r-g',`${f(G*1000,3)} mS`);s('r-b',`${B>=0?'+':''}${f(B*1000,3)} mS`);s('r-gc',`${f(gr,4)}${gi>=0?'+':'-'}j${f(Math.abs(gi),4)}`);s('r-gm',f(mag,4));s('r-ga',`${f(ang,2)}°`);const ve=document.getElementById('r-vswr');ve.textContent=vswr>999?'∞':f(vswr,3);ve.className='mv '+(vswr<1.5?'ok':vswr<3?'':vswr<6?'wa':'ba');const re=document.getElementById('r-rl');re.textContent=rl>60?'∞ dB':`${f(rl,2)} dB`;re.className='mv '+(rl>20?'ok':rl>10?'':rl>6?'wa':'ba');s('r-ml',`${f(ml,3)} dB`);s('r-pr',`${f(pr,2)} %`);s('r-pt',`${f(pt,2)} %`);const fMHz=freq||1000;const omega=2*PI*fMHz*1e6;s('r-feq',`${f(fMHz,0)} MHz`);if(xAbs>0){s('r-lc',`${f(xAbs/omega*1e9,3)} nH`);s('r-cc','—');}else if(xAbs<0){s('r-lc','—');s('r-cc',`${f(-1/(omega*xAbs)*1e12,3)} pF`);}else{s('r-lc','—');s('r-cc','—');}const Q=rAbs>0?Math.abs(xAbs)/rAbs:0;s('r-q',f(Q,3));s('r-zone',z.i>0.05?'Superior inductiva':z.i<-0.05?'Inferior capacitiva':'Eje real');s('r-type',z.r<0.05?'Reactiva pura':Math.abs(z.i)>1?'Reactancia dominante':'Resistiva');const me=document.getElementById('r-match');me.textContent=mag<0.05?'Excelente ✓':mag<0.2?'Buena':mag<0.5?'Moderada':'Pobre ✗';me.className='mv '+(mag<0.05?'ok':mag<0.2?'':mag<0.5?'wa':'ba');document.getElementById('st-pos').textContent=`Γ=${f(gr,3)}${gi>=0?'+':'-'}j${f(Math.abs(gi),3)} |Γ|=${f(mag,4)}`;}
+function updatePtsList(){const el=document.getElementById('pts-list');document.getElementById('st-n').textContent=`${points.length} pt${points.length!==1?'s':''}`;if(!points.length){el.innerHTML='<div style="padding:12px;font-size:11px;color:var(--color-text-tertiary)">Sin puntos aún</div>';return;}el.innerHTML=points.map((pt,i)=>{const col=COLS[i%COLS.length];const{rAbs,xAbs,vswr,rl,mag}=pt.p;return`<div class="pt${i===selPt?' sel':''}" onclick="selectPt(${i})"><div class="pt-dot" style="background:${col}"></div><div class="pt-body">P${i+1}: ${f(rAbs,1)}${xAbs>=0?'+':'-'}j${f(Math.abs(xAbs),1)} Ω<br>ROE ${vswr>99?'∞':f(vswr,2)} RL ${rl>60?'∞':f(rl,1)} dB |Γ|${f(mag,3)}</div><span class="pt-rm" onclick="event.stopPropagation();removePt(${i})">×</span></div>`;}).join('');}
+function selectPt(i){selPt=i;const pt=points[i];showRes(pt.p,pt.freq);updatePtsList();redrawMain();}
+function removePt(i){points.splice(i,1);if(selPt>=points.length)selPt=points.length-1;updatePtsList();redrawMain();}
+function clearAll(){points=[];selPt=-1;updatePtsList();redrawMain();['r-z','r-zn','r-r','r-x','r-y','r-g','r-b','r-gc','r-gm','r-ga','r-vswr','r-rl','r-ml','r-pr','r-pt','r-feq','r-lc','r-cc','r-q','r-zone','r-type','r-match'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent='—';e.className='mv';}});}
+function exportCSV(){if(!points.length)return;let csv='P,R(Ω),X(Ω),|Γ|,∠Γ(°),VSWR,RL(dB),Pr(%),Pt(%)\n';points.forEach((pt,i)=>{const p=pt.p;csv+=`P${i+1},${f(p.rAbs,3)},${f(p.xAbs,3)},${f(p.mag,5)},${f(p.ang,2)},${f(p.vswr,3)},${f(p.rl,3)},${f(p.pr,3)},${f(p.pt,3)}\n`;});const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='smith_points.csv';a.click();}
+function redrawMain(){drawSmith('sc',(_ctx,_d,_c)=>{});drawPoints('sc');}
+let hoverG=null;
+function setupMainEvents(){const c=document.getElementById('sc');if(!c)return;const tip=document.getElementById('tip');c.addEventListener('mousemove',e=>{const r=c.getBoundingClientRect();const sx=c.width/r.width,sy=c.height/r.height;const px=(e.clientX-r.left)*sx,py=(e.clientY-r.top)*sy;if(inside('sc',px,py)){const g=c2g('sc',px,py);if(Math.hypot(g.r,g.i)<=1){hoverG=g;const z=g2z(g.r,g.i);const mag=Math.hypot(g.r,g.i);const vswr=mag<0.9999?(1+mag)/(1-mag):9999;const rA=(z.r*Z0).toFixed(1);const xA=(z.i*Z0).toFixed(1);tip.style.display='block';tip.innerHTML=`<b style="font-weight:500">${rA}${z.i>=0?'+':'-'}j${Math.abs(parseFloat(xA))} Ω</b><br>ROE ${vswr>99?'∞':vswr.toFixed(2)} |Γ| ${mag.toFixed(3)}`;const bnd=c.getBoundingClientRect();tip.style.left=(e.clientX-bnd.left+12)+'px';tip.style.top=(e.clientY-bnd.top-18)+'px';}}else{hoverG=null;tip.style.display='none';}redrawMain();if(hoverG){const g=hoverG,ctx=ctxs['sc'];const p=g2c('sc',g.r,g.i);ctx.beginPath();ctx.arc(p.x,p.y,5,0,PI*2);ctx.fillStyle='rgba(29,158,117,0.25)';ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,3,0,PI*2);ctx.fillStyle='#1d9e75';ctx.fill();}});c.addEventListener('mouseleave',()=>{hoverG=null;tip.style.display='none';redrawMain();});c.addEventListener('click',e=>{const r=c.getBoundingClientRect();const sx=c.width/r.width,sy=c.height/r.height;const px=(e.clientX-r.left)*sx,py=(e.clientY-r.top)*sy;if(!inside('sc',px,py))return;const g=c2g('sc',px,py);if(Math.hypot(g.r,g.i)>1)return;const z=g2z(g.r,g.i);document.getElementById('inp-mode').value='z';onModeChange();document.getElementById('inp-a').value=(z.r*Z0).toFixed(2);document.getElementById('inp-b').value=(z.i*Z0).toFixed(2);const freq=parseFloat(document.getElementById('inp-freq').value)||1000;addPt(g.r,g.i,freq);spTab('res',document.querySelector('.sp-tab'));});}
+function setMT(t,el){matchType=t;document.querySelectorAll('.stag').forEach(e=>e.classList.remove('on'));el.classList.add('on');}
+function calcMatch(){const RL=parseFloat(document.getElementById('m-rl').value);const XL=parseFloat(document.getElementById('m-xl').value);const Z0m=parseFloat(document.getElementById('m-z0').value)||50;const fMHz=parseFloat(document.getElementById('m-freq').value)||1000;const omega=2*PI*fMHz*1e6;const gl=z2g(RL/Z0m,XL/Z0m);let e1='—',e2='—',bw='—',qv='—',rlAfter='—',top='—',desc='';
+if(matchType==='l'){
+  /* ── RED-L: algoritmo unificado, verificado numericamente (Pozar §5.1) ──
+   * TOPO A — shunt junto a FUENTE, serie junto a ZL  →  válida RL ≤ Z0
+   *   X' = ±√(RL·(Z0−RL)),  Xs = X'−XL,  Xp = −Z0·RL/X'
+   * TOPO B — shunt junto a ZL, serie junto a FUENTE  →  válida RL ≥ Z0 (o ZL compleja)
+   *   Cuadrática: (RL−Z0)·Xp²−2·Z0·XL·Xp−Z0·(RL²+XL²)=0,  Xs=−Im(ZL‖jXp) */
+  const fmtC=(X)=>{if(!isFinite(X)||Math.abs(X)<1e-9)return'0 Ω';return X>0?`L = ${f(X/omega*1e9,3)} nH`:`C = ${f(-1/(omega*X)*1e12,3)} pF`;};
+  function ZZpar(ar,ai,br,bi){const ma=ar**2+ai**2,mb=br**2+bi**2;if(ma<1e-20)return{r:br,i:bi};if(mb<1e-20)return{r:ar,i:ai};const Yr=ar/ma+br/mb,Yi=-ai/ma-bi/mb;const mY=Yr**2+Yi**2;return mY<1e-20?{r:1e9,i:0}:{r:Yr/mY,i:-Yi/mY};}
+  function isOk(v){return isFinite(v.r)&&isFinite(v.i)&&Math.abs(v.r-Z0m)<1&&Math.abs(v.i)<1;}
+  let sols=[];
+  if(RL<=0){e1='RL debe ser > 0 Ω';e2='—';}
+  else if(Math.abs(RL-Z0m)<0.1&&Math.abs(XL)<0.1){e1='ZL ≈ Z₀: ya adaptada';e2='—';top='Sin red requerida';}
+  else{
+    if(RL<=Z0m+0.01){
+      const disc=RL*(Z0m-RL);
+      if(disc>=0){[Math.sqrt(disc),-Math.sqrt(disc)].forEach(Xp_=>{if(Math.abs(Xp_)<1e-9)return;const Xs=Xp_-XL,Xp=-Z0m*RL/Xp_;const v=ZZpar(0,Xp,RL,XL+Xs);if(isOk(v))sols.push({Xs,Xp,e1:'Serie (carga): '+fmtC(Xs),e2:'Shunt (fuente): '+fmtC(Xp),Q:Math.abs(Xp_)/Z0m,topo:'A'});});}
+    }
+    {const a=RL-Z0m,b=-2*Z0m*XL,c=-Z0m*(RL**2+XL**2),disc=b**2-4*a*c;
+     const tryXp=(Xp)=>{if(!isFinite(Xp)||Math.abs(Xp)<1e-12)return;const Zp=ZZpar(RL,XL,0,Xp);const Xs=-Zp.i;const v={r:Zp.r,i:Zp.i+Xs};if(isOk(v))sols.push({Xs,Xp,e1:'Shunt (carga): '+fmtC(Xp),e2:'Serie (fuente): '+fmtC(Xs),Q:Math.sqrt(Math.max(0,Z0m/RL-1)),topo:'B'});};
+     if(Math.abs(a)<1e-9){if(Math.abs(b)>1e-9)tryXp(-c/b);}else if(disc>=0){const sq=Math.sqrt(disc);tryXp((-b+sq)/(2*a));tryXp((-b-sq)/(2*a));}}
+    sols=sols.filter((s,i)=>!sols.slice(0,i).some(t=>Math.abs(t.Xs-s.Xs)<0.1&&Math.abs(t.Xp-s.Xp)<0.1));
+    if(sols.length>=1){
+      e1=sols[0].e1;e2=sols[0].e2;
+      top=sols.length>=2?`Sol.1 (Topo ${sols[0].topo}) | Sol.2: ${sols[1].e1.split(': ')[1]} / ${sols[1].e2.split(': ')[1]}`:`Red-L Topo ${sols[0].topo}`;
+    }else{e1='Sin solución con 2 elem.';e2='Considerar red π o T';top='Sin solución';}
+  }
+  const Qbest=sols[0]?.Q||0;
+  bw=Qbest>0.01?`${f(fMHz/Qbest,1)} MHz (BW≈f/Q)`:'Banda ancha';
+  qv=Qbest>0.01?f(Qbest,3):'<0.1';rlAfter='> 40 dB';
+  desc=`Red-L verificada numéricamente. ${sols.length>1?`${sols.length} soluciones — elegir por componentes disponibles.`:'Solución única.'} Q=${f(Qbest,2)}. Topo. ${sols[0]?.topo==='A'?'A: shunt@fuente + serie@carga (RL≤Z₀)':'B: shunt@carga + serie@fuente (RL≥Z₀)'}.`;
+} else if(matchType==='stub'){
+  /* STUB PARALELO — método de admitancias, verificado analíticamente (Pozar §5.3)
+   * y_in(d) = (yL + j·t)/(1 + j·yL·t),  t = tan(βd)
+   * Re(y_in)=1 → (yLr−|yL|²)·t² + 2·yLi·t + (yLr−1) = 0
+   * Stub SC: B = −cot(βl),  Stub OC: B = tan(βl)  */
+  const lambda=C0/(fMHz*1e6)*1000;
+  const rn=RL/Z0m, xn=XL/Z0m;
+  if(rn<=0){e1='RL debe ser > 0 Ω';e2='—';top='Sin solución';}
+  else{
+    const yLr=rn/(rn*rn+xn*xn), yLi=-xn/(rn*rn+xn*xn);
+    const yL2=yLr*yLr+yLi*yLi;
+    const A=yLr-yL2, B2=2*yLi, CC=yLr-1;
+    let ts=[];
+    if(Math.abs(A)<1e-10){if(Math.abs(B2)>1e-10)ts.push(-CC/B2);}
+    else{const disc=B2*B2-4*A*CC;if(disc>=0){const sq=Math.sqrt(disc);ts.push((-B2+sq)/(2*A));ts.push((-B2-sq)/(2*A));}}
+    if(ts.length===0){e1='Sin solución para esta ZL';e2='—';top='Sin solución';}
+    else{
+      const sols=ts.map((t,idx)=>{
+        const d_wl=((Math.atan(t)/(2*PI))%0.5+0.5)%0.5;
+        const dMm=d_wl*lambda;
+        const dr=1-yLi*t, di=yLr*t, denom=dr*dr+di*di;
+        const yi_i=denom>1e-12?((yLi+t)*dr-yLr*di)/denom:0;
+        const bs=-yi_i;
+        const lSC=(((Math.atan(Math.abs(bs)<1e-10?1e10:-1/bs)/(2*PI))%0.5)+0.5)%0.5*lambda;
+        const lOC=(((Math.atan(bs)/(2*PI))%0.5)+0.5)%0.5*lambda;
+        return{dMm,d_wl,lSC,lOC};
+      });
+      const r=sols[0];
+      e1=`d = ${f(r.dMm,1)} mm  (${f(r.d_wl*360,1)}°)`;
+      e2=`Stub SC: ${f(r.lSC,1)} mm  |  Stub CA: ${f(r.lOC,1)} mm`;
+      top=sols[1]?`Sol. 2: d=${f(sols[1].dMm,1)}mm  SC=${f(sols[1].lSC,1)}mm  CA=${f(sols[1].lOC,1)}mm`:'Stub paralelo';
+      bw=`~${f(fMHz*0.1,0)} MHz`; qv='Variable'; rlAfter='> 30 dB';
+      desc='Stub paralelo a distancia d de ZL. SC=stub cortocircuito, CA=stub circuito abierto. Sin componentes lumped — solo línea de transmisión. Se muestran dos soluciones. Fórmula: (yLr−|yL|²)t²+2yLi·t+(yLr−1)=0 verificada yin=Z₀.';
+    }
+  }
+} else {
+  if(Math.abs(XL)>0.1)return alert('λ/4 requiere ZL puramente real (XL ≈ 0)');
+  if(RL<=0)return alert('λ/4 requiere RL > 0');
+  const Zqw=Math.sqrt(Z0m*RL);
+  e1=`Z₀_transf = ${f(Zqw,2)} Ω`;e2=`Long. = ${f((C0/(fMHz*1e6))/4*1000,1)} mm`;bw=`~${f(fMHz*0.2,0)} MHz`;qv='N/A';rlAfter='> 40 dB';top='λ/4 transformer';
+  desc='Sección de λ/4 con Z₀_transf = √(Z₀·ZL). Transforma RL real → Z₀. Banda angosta. Ampliamente usado en divisores Wilkinson, filtros y combinadores de potencia.';
+}
+document.getElementById('match-cards').style.display='grid';s('mc-e1',e1);s('mc-e2',e2);s('mc-bw',bw);s('mc-q',qv);s('mc-rl',rlAfter);s('mc-top',top);document.getElementById('match-desc').textContent=desc;setupCanvas('sc2');drawSmith('sc2',(ctx,d,c)=>{const p=g2c('sc2',gl.r,gl.i);ctx.beginPath();ctx.arc(p.x,p.y,6,0,PI*2);ctx.fillStyle='#d85a30';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.stroke();const gmag=Math.hypot(gl.r,gl.i);if(gmag>0.01){ctx.beginPath();ctx.arc(d.cx,d.cy,gmag*d.R,0,PI*2);ctx.strokeStyle='rgba(216,90,48,0.4)';ctx.lineWidth=0.8;ctx.setLineDash([4,2]);ctx.stroke();ctx.setLineDash([]);}const cp=g2c('sc2',0,0);ctx.beginPath();ctx.arc(cp.x,cp.y,6,0,PI*2);ctx.fillStyle='#1d9e75';ctx.fill();if(layers.lbl&&c){ctx.fillStyle=c.fg2;ctx.font=`400 9px var(--font-sans,sans-serif)`;ctx.textAlign='left';ctx.fillText('ZL',p.x+8,p.y-3);ctx.fillText('Z₀',cp.x+8,cp.y-3);}});}
+function clearMatch(){document.getElementById('match-cards').style.display='none';document.getElementById('match-results').innerHTML='<div style="padding:12px;font-size:11px;color:var(--color-text-tertiary)">Ingresa ZL y presiona Calcular</div>';setupCanvas('sc2');drawSmith('sc2');}
+let sweepData=[];
+function fsModeChange(){const m=document.getElementById('fs-model').value;const l1=document.getElementById('fs-lbl1'),l2=document.getElementById('fs-lbl2');const g2=document.getElementById('fs-grp2');if(m==='rl'){l1.textContent='L (nH)';g2.style.display='none';}else{l1.textContent='L (nH)';l2.textContent='C (pF)';g2.style.display='';}}
+function runSweep(){const R=parseFloat(document.getElementById('fs-r').value)||50;const model=document.getElementById('fs-model').value;const v1=parseFloat(document.getElementById('fs-v1').value)||10;const v2=parseFloat(document.getElementById('fs-v2').value)||10;const f1=Math.max(0.001,parseFloat(document.getElementById('fs-f1').value)||100);const f2=parseFloat(document.getElementById('fs-f2').value)||3000;const Z0sw=parseFloat(document.getElementById('fs-z0').value)||50;const N=200;sweepData=[];let minVswr=1e9,maxVswr=0,frRes=null,zRes=null;for(let k=0;k<=N;k++){const fMHz=f1+(f2-f1)*k/N;const w=2*PI*Math.max(fMHz,0.001)*1e6;let Zr=R,Zi=0;if(model==='rl'){Zi=w*v1*1e-9;}else if(model==='rc'){const Xc=-1/(w*v2*1e-12);Zi=Xc;}else if(model==='rlc'){Zi=w*v1*1e-9-1/(w*v2*1e-12);}else if(model==='par-rl'){const Xl=w*v1*1e-9;const d=R**2+Xl**2;if(d<1e-20){sweepData.push({fMHz,Zr:0,Zi:0,g:{r:-1,i:0},vswr:9999});continue;}Zr=R*Xl**2/d;Zi=R**2*Xl/d;}else{const Xc=-1/(w*v2*1e-12);const d=R**2+Xc**2;if(d<1e-20){sweepData.push({fMHz,Zr:0,Zi:0,g:{r:-1,i:0},vswr:9999});continue;}Zr=R*Xc**2/d;Zi=R**2*Xc/d;}const g=z2g(Zr/Z0sw,Zi/Z0sw);const mag=Math.min(Math.hypot(g.r,g.i),1);const vswr=mag<0.9999?(1+mag)/(1-mag):9999;if(vswr<minVswr)minVswr=vswr;if(vswr>maxVswr)maxVswr=vswr;if(k>0&&sweepData.length>0&&Math.abs(Zi)<Math.abs(sweepData[sweepData.length-1].Zi)){frRes=fMHz;zRes={r:Zr,x:Zi};}sweepData.push({fMHz,Zr,Zi,g,vswr});}s('sw-f1',`${f(f1,0)} MHz`);s('sw-f2',`${f(f2,0)} MHz`);const sd=sweepData[0],ed=sweepData[sweepData.length-1];s('sw-zi',fz(sd.Zr,sd.Zi)+' Ω');s('sw-zf',fz(ed.Zr,ed.Zi)+' Ω');s('sw-fr',frRes?`${f(frRes,1)} MHz`:'—');s('sw-zr',zRes?fz(zRes.r,zRes.x)+' Ω':'—');s('sw-rm',f(maxVswr>999?999:maxVswr,2));s('sw-rmin',f(minVswr,2));setupCanvas('sc3');drawSmith('sc3',(ctx,d,c)=>{const N=sweepData.length;for(let k=1;k<N;k++){const t=(k-1)/(N-1);const r=Math.round(55+t*200),bl=Math.round(221-t*200);const p0=g2c('sc3',sweepData[k-1].g.r,sweepData[k-1].g.i);const p1=g2c('sc3',sweepData[k].g.r,sweepData[k].g.i);ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);ctx.strokeStyle=`rgb(${r},${100},${bl})`;ctx.lineWidth=1.5;ctx.stroke();}const p0=g2c('sc3',sweepData[0].g.r,sweepData[0].g.i);const pN=g2c('sc3',sweepData[N-1].g.r,sweepData[N-1].g.i);ctx.beginPath();ctx.arc(p0.x,p0.y,5,0,PI*2);ctx.fillStyle='#378add';ctx.fill();ctx.beginPath();ctx.arc(pN.x,pN.y,5,0,PI*2);ctx.fillStyle='#e24b4a';ctx.fill();if(layers.lbl&&c){ctx.fillStyle=c.fg2;ctx.font=`400 9px var(--font-sans,sans-serif)`;ctx.textAlign='center';ctx.fillText('f₁',p0.x,p0.y-8);ctx.fillText('f₂',pN.x,pN.y-8);}});}
+function clearSweep(){sweepData=[];setupCanvas('sc3');drawSmith('sc3');['sw-f1','sw-f2','sw-zi','sw-zf','sw-fr','sw-zr','sw-rm','sw-rmin'].forEach(id=>s(id,'—'));}
+function swpModeChange(){const m=document.getElementById('swp-mode').value;const la=document.getElementById('swp-la'),lb=document.getElementById('swp-lb');const gb=document.getElementById('swp-gb');const a=document.getElementById('swp-a');if(m==='z'){la.textContent='R (Ω)';lb.textContent='X (Ω)';gb.style.display='';a.value=75;}else if(m==='gamma'){la.textContent='|Γ| magnitud';gb.style.display='none';a.value=0.333;}else if(m==='rl'){la.textContent='Return Loss (dB)';gb.style.display='none';a.value=9.5;}else if(m==='vswr'){la.textContent='VSWR / ROE';gb.style.display='none';a.value=2;}else if(m==='pr'){la.textContent='Pᵣ % reflejada';gb.style.display='none';a.value=11.1;}}
+function calcSWR(){const m=document.getElementById('swp-mode').value;const av=parseFloat(document.getElementById('swp-a').value);const bv=parseFloat(document.getElementById('swp-b').value)||0;const Z0s=parseFloat(document.getElementById('swp-z0').value)||50;const Pin=parseFloat(document.getElementById('swp-pin').value)||1;let gr,gi,mag;if(isNaN(av))return;if(m==='z'){const g=z2g(Math.max(0,av)/Z0s,bv/Z0s);gr=g.r;gi=g.i;mag=Math.min(Math.hypot(gr,gi),1);}else if(m==='gamma'){mag=Math.max(0,Math.min(1,av));gr=mag;gi=0;}else if(m==='rl'){if(av<0)return;mag=Math.min(1,Math.pow(10,-av/20));gr=mag;gi=0;}else if(m==='vswr'){if(av<1)return;mag=Math.min(1,(av-1)/(av+1));gr=mag;gi=0;}else if(m==='pr'){if(av<0||av>100)return;mag=Math.sqrt(av/100);gr=mag;gi=0;}const vswr=mag<0.9999?(1+mag)/(1-mag):9999;const rl=mag>1e-5?-20*Math.log10(mag):99.9;const pr=mag**2*100,pt=Math.max(0,(1-mag**2)*100);const ml=pt>0.01?-10*Math.log10(pt/100):99.9;const Pr=Pin*pr/100,Pt=Pin*pt/100;const z=g2z(gr,gi);const ang=Math.atan2(gi,gr)*180/PI;const rAbs=z.r*Z0s,xAbs=z.i*Z0s;const den=rAbs**2+xAbs**2,G=den>1e-10?rAbs/den*1000:0,B=den>1e-10?-xAbs/den*1000:0;function setCard(id,val,sub,pctEl,pct,col){document.getElementById(id).textContent=val;document.getElementById(id+'-s').textContent=sub;const p=document.getElementById(id+'-p');p.style.width=Math.min(100,Math.max(0,pct))+'%';p.style.background=col;}document.getElementById('sw-vswr').textContent=vswr>999?'∞':f(vswr,3);document.getElementById('sw-vswr-s').textContent=vswr<1.5?'Excelente':vswr<2?'Buena':vswr<3?'Aceptable':vswr<10?'Pobre':'Muy pobre';document.getElementById('sw-vswr-p').style.width=Math.min(100,(vswr-1)/9*100)+'%';setCard('sw-gm',f(mag,4),`∠Γ = ${f(ang,1)}°`,'sw-gm-p',mag*100,'#378add');setCard('sw-rl',rl>60?'∞ dB':f(rl,2)+' dB',rl>20?'Excelente':rl>10?'Buena':rl>6?'Aceptable':'Pobre','sw-rl-p',Math.min(100,rl/40*100),'#d85a30');setCard('sw-pr',f(pr,2)+' %',`${f(Pr*1000,2)} mW de ${f(Pin*1000,0)} mW`,'sw-pr-p',Math.min(100,pr),'#e24b4a');setCard('sw-pt',f(pt,2)+' %',`${f(Pt*1000,2)} mW transmitidos`,'sw-pt-p',Math.min(100,pt),'#1d9e75');setCard('sw-ml',ml>60?'∞ dB':f(ml,3)+' dB','Pérdida por desalineación','sw-ml-p',Math.min(100,ml*10),'#7f77dd');s('swr-gc',`${f(gr,4)}${gi>=0?'+':'-'}j${f(Math.abs(gi),4)}`);s('swr-ga',`${f(ang,2)}°`);s('swr-z',fz(rAbs,xAbs)+' Ω');s('swr-y',`${f(G,3)}${B>=0?'+':'-'}j${f(Math.abs(B),3)} mS`);}
+function calcTline(){const RL=parseFloat(document.getElementById('tl-rl').value);const XL=parseFloat(document.getElementById('tl-xl').value)||0;const Z0t=parseFloat(document.getElementById('tl-z0').value)||50;const fMHz=parseFloat(document.getElementById('tl-freq').value)||1000;const lenMm=Math.max(0,parseFloat(document.getElementById('tl-len').value)||0);const er=Math.max(1,parseFloat(document.getElementById('tl-er').value)||1);const att=Math.max(0,parseFloat(document.getElementById('tl-att').value)||0);if(isNaN(RL)||RL<0)return;const vp=C0/Math.sqrt(er);const lam=vp/(fMHz*1e6)*1000;const beta=2*PI/(lam/1000);const bl=beta*lenMm/1000;const tau=lenMm/1000/vp;const elen=bl*180/PI;let Rin,Xin;if(lenMm<1e-6){Rin=RL;Xin=XL;}else{const cosbl=Math.cos(bl);if(Math.abs(cosbl)<1e-6){Rin=Z0t**2/(RL>0?RL:1e-9);Xin=0;}else{const tanBl=Math.tan(bl);const Nr=RL-XL*tanBl,Ni=XL+Z0t*tanBl,Dr=Z0t-XL*tanBl,Di=RL*tanBl,dd=Dr**2+Di**2;if(dd<1e-12){Rin=1e9;Xin=0;}else{Rin=Z0t*(Nr*Dr+Ni*Di)/dd;Xin=Z0t*(Ni*Dr-Nr*Di)/dd;}}}if(att>0){const aFactor=Math.pow(10,-att*lenMm/1000/10);Rin*=aFactor;}const gL=z2g(RL/Z0t,XL/Z0t);const gin=z2g(Rin/Z0t,Xin/Z0t);const magL=Math.min(1,Math.hypot(gL.r,gL.i)),magIn=Math.min(1,Math.hypot(gin.r,gin.i));const vsL=magL<0.9999?(1+magL)/(1-magL):9999,vsIn=magIn<0.9999?(1+magIn)/(1-magIn):9999;const rlL=magL>1e-5?-20*Math.log10(magL):99.9,rlIn=magIn>1e-5?-20*Math.log10(magIn):99.9;const Zqw=Z0t**2/(RL>0?RL:1e-9),Zh2=RL;s('tl-lam',`${f(lam,2)} mm`);s('tl-elen',`${f(elen,1)}° (${f(elen/360,4)}\u03bb)`);s('tl-bl',f(bl,4));s('tl-tau',`${f(tau*1e9,3)} ns`);s('tl-zin',fz(Rin,Xin)+' \u03a9');s('tl-rin',`${f(Rin,2)} \u03a9`);s('tl-xin',`${Xin>=0?'+':''}${f(Xin,2)} \u03a9`);s('tl-gin',f(magIn,4));const ve=document.getElementById('tl-vin');ve.textContent=vsIn>999?'\u221e':f(vsIn,3);ve.className='mv '+(vsIn<1.5?'ok':vsIn<3?'':vsIn<6?'wa':'ba');s('tl-rlin',rlIn>60?'\u221e dB':`${f(rlIn,2)} dB`);s('tl-gl',f(magL,4));const vle=document.getElementById('tl-vl');vle.textContent=vsL>999?'\u221e':f(vsL,3);vle.className='mv '+(vsL<1.5?'ok':vsL<3?'':vsL<6?'wa':'ba');s('tl-rll',rlL>60?'\u221e dB':`${f(rlL,2)} dB`);s('tl-q4',`${f(Zqw,2)} \u03a9`);s('tl-h2',`${f(Zh2,2)} \u03a9 (= ZL)`);setupCanvas('sc4');drawSmith('sc4',(ctx,d,c)=>{const pL=g2c('sc4',gL.r,gL.i),pIn=g2c('sc4',gin.r,gin.i);const N=80;const pts=[];for(let k=0;k<=N;k++){const blk=bl*k/N;let Rk,Xk;if(Math.abs(Math.cos(blk))<1e-6){Rk=Z0t**2/(RL>0?RL:1e-9);Xk=0;}else{const tbk=Math.tan(blk);const Nr=RL-XL*tbk,Ni=XL+Z0t*tbk,Dr=Z0t-XL*tbk,Di=RL*tbk,dk=Dr**2+Di**2;Rk=dk>1e-12?Z0t*(Nr*Dr+Ni*Di)/dk:1e9;Xk=dk>1e-12?Z0t*(Ni*Dr-Nr*Di)/dk:0;}const gk=z2g(Rk/Z0t,Xk/Z0t);const pp=g2c('sc4',gk.r,gk.i);if(isFinite(pp.x)&&isFinite(pp.y))pts.push(pp);}if(pts.length>1){ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.strokeStyle='rgba(83,74,183,0.7)';ctx.lineWidth=1.5;ctx.stroke();}ctx.beginPath();ctx.arc(pL.x,pL.y,6,0,PI*2);ctx.fillStyle='#d85a30';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.stroke();ctx.beginPath();ctx.arc(pIn.x,pIn.y,6,0,PI*2);ctx.fillStyle='#534ab7';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.stroke();if(layers.lbl&&c){ctx.fillStyle=c.fg2;ctx.font=`400 9px var(--font-sans,sans-serif)`;ctx.textAlign='left';ctx.fillText('ZL',pL.x+8,pL.y-3);ctx.fillText('Zin',pIn.x+8,pIn.y-3);}});}
+function switchModule(name,el){document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));document.querySelectorAll('.tb-tab').forEach(t=>t.classList.remove('active'));document.getElementById(`mod-${name}`).classList.add('active');el.classList.add('active');document.getElementById('st-mod').textContent=el.textContent.trim();setTimeout(()=>{if(name==='main'){setupCanvas('sc');redrawMain();}else if(name==='match'){setupCanvas('sc2');drawSmith('sc2');}else if(name==='freq'){setupCanvas('sc3');drawSmith('sc3');fsModeChange();}else if(name==='tline'){setupCanvas('sc4');drawSmith('sc4');}},30);}
+function spTab(name,el){document.querySelectorAll('.sp-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.sp-tc').forEach(t=>t.classList.remove('active'));document.getElementById(`spt-${name}`).classList.add('active');if(el)el.classList.add('active');else document.querySelectorAll('.sp-tab')[['res','pts','layers','ref'].indexOf(name)]?.classList.add('active');}
+function tlTab(name,el){document.querySelectorAll('#mod-tline .sp-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('#mod-tline .sp-tc').forEach(t=>t.classList.remove('active'));document.getElementById(`tlt-${name}`).classList.add('active');el.classList.add('active');}
+function toggleL(k,el){layers[k]=!layers[k];el.classList.toggle('on',layers[k]);redrawMain();}
+function setSWR(v){swrVal=parseFloat(v);document.getElementById('swr-v').textContent=f(swrVal,1);redrawMain();}
+function z0change(){Z0=parseFloat(document.getElementById('inp-z0').value)||50;document.getElementById('st-z0s').textContent=`Z₀=${Z0}Ω`;}
+function qpt(rn,xn){const g=z2g(rn,xn);addPt(g.r,g.i,parseFloat(document.getElementById('inp-freq').value)||1000);}
+function qgamma(gr,gi){addPt(gr,gi,parseFloat(document.getElementById('inp-freq').value)||1000);}
+function clearE(){document.getElementById('err').textContent='';document.getElementById('inp-a').classList.remove('err');}
+function er(msg){document.getElementById('err').textContent=msg;document.getElementById('inp-a').classList.add('err');}
+function s(id,val){const e=document.getElementById(id);if(e)e.textContent=val;}
+matchMedia('(prefers-color-scheme:dark)').addEventListener('change',e=>{isDark=e.matches;redrawMain();});
+window.addEventListener('resize',()=>{const active=document.querySelector('.module.active')?.id?.replace('mod-','');if(active){setTimeout(()=>{if(active==='main'){setupCanvas('sc');redrawMain();}else if(active==='match'){setupCanvas('sc2');drawSmith('sc2');}else if(active==='freq'){setupCanvas('sc3');if(sweepData.length)runSweep();}else if(active==='tline'){setupCanvas('sc4');drawSmith('sc4');}},50);}});
+setTimeout(()=>{setupCanvas('sc');setupCanvas('sc2');setupCanvas('sc3');setupCanvas('sc4');drawSmith('sc');setupMainEvents();},80);
+</script>
+</body>
+</html>

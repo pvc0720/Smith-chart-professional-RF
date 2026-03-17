@@ -71,7 +71,8 @@ body{font-family:var(--font-sans);font-size:13px}
 .module.active{display:flex}
 .two-col{display:grid;grid-template-columns:1fr 210px;height:calc(100vh - 120px)}
 .chart-wrap{position:relative;padding:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
-#sc{display:block;cursor:crosshair;border-radius:6px;background:var(--color-background-secondary)}canvas:not(#sc){display:block;border-radius:6px;background:var(--color-background-secondary)}
+#sc{display:block;cursor:crosshair;border-radius:6px;background:var(--color-background-secondary)}
+canvas:not(#sc){display:block;border-radius:6px;background:var(--color-background-secondary)}
 #tip{position:absolute;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:5px 9px;font-size:11px;pointer-events:none;display:none;z-index:10;max-width:160px}
 .side-panel{border-left:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow-y:auto;max-height:760px}
 .sp-tabs{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);flex-shrink:0}
@@ -107,7 +108,11 @@ body{font-family:var(--font-sans);font-size:13px}
 .pt-body{flex:1;color:var(--color-text-secondary);line-height:1.5;font-family:var(--font-mono);font-size:10px}
 .pt-rm{color:var(--color-text-tertiary);font-size:13px;cursor:pointer;margin-left:auto}
 .pt-rm:hover{color:var(--color-text-danger)}
-.match-layout{display:grid;grid-template-columns:1fr 260px;min-height:520px}
+
+/* Modificación para el layout de adaptación */
+.match-layout{display:grid;grid-template-columns:1fr 300px;min-height:calc(100vh - 150px)}
+#sc2 { width: 100% !important; height: auto !important; aspect-ratio: 1 / 1; max-height: 820px; }
+
 .match-ctrl{border-left:0.5px solid var(--color-border-tertiary);overflow-y:auto;padding:0}
 .match-step{padding:8px 11px;border-bottom:0.5px solid var(--color-border-tertiary)}
 .match-step h3{font-size:10px;font-weight:500;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px}
@@ -137,19 +142,14 @@ body{font-family:var(--font-sans);font-size:13px}
   .side-panel,.match-ctrl,.freq-ctrl{border-left:none;border-top:0.5px solid var(--color-border-tertiary);max-height:300px}
   .swr-cards{grid-template-columns:1fr 1fr}
 }
-/* ── Touchstone drop zone ── */
 .drop-zone{border:1.5px dashed var(--color-border-secondary);border-radius:var(--border-radius-md);padding:14px 16px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s;font-size:11px;color:var(--color-text-secondary)}
 .drop-zone:hover,.drop-zone.drag-over{border-color:var(--color-border-info);background:var(--color-background-info);color:var(--color-text-info)}
 .drop-zone input[type=file]{display:none}
-/* ── S11 mini chart ── */
 #s11-chart-wrap{padding:8px 12px 4px;border-bottom:0.5px solid var(--color-border-tertiary)}
-/* ── Conjugate marker ── */
 .conj-btn{display:flex;align-items:center;gap:6px;padding:6px 10px;cursor:pointer;border-bottom:0.5px solid var(--color-border-tertiary);font-size:11px;color:var(--color-text-secondary)}
 .conj-btn:hover{background:var(--color-background-secondary)}
 .conj-dot{width:9px;height:9px;border-radius:50%;border:1.5px dashed #d85a30;background:transparent;flex-shrink:0}
-/* ── Export buttons ── */
 .export-row{display:flex;gap:6px;padding:8px 10px;border-bottom:0.5px solid var(--color-border-tertiary);flex-wrap:wrap}
-/* ── Touchstone freq table ── */
 .ts-table{width:100%;font-size:10px;border-collapse:collapse;font-family:var(--font-mono)}
 .ts-table th{text-align:left;padding:3px 6px;color:var(--color-text-tertiary);font-weight:500;border-bottom:0.5px solid var(--color-border-tertiary)}
 .ts-table td{padding:2px 6px;color:var(--color-text-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
@@ -161,17 +161,16 @@ body{font-family:var(--font-sans);font-size:13px}
 <div class="topbar">
   <div class="tb-tab active" onclick="switchModule('main',this)" title="Carta de Smith principal con entrada de impedancia">Carta de Smith</div>
   <div class="tb-sep"></div>
-  <div class="tb-tab" onclick="switchModule('match',this)" title="Calcula redes de adaptación de impedancia (L, stub, quarter-wave)">Adaptación</div>
+  <div class="tb-tab" onclick="switchModule('match',this)" title="Calcula redes de adaptación de impedancia">Adaptación</div>
   <div class="tb-sep"></div>
-  <div class="tb-tab" onclick="switchModule('freq',this)" title="Traza la trayectoria de impedancia en función de la frecuencia">Barrido en freq.</div>
+  <div class="tb-tab" onclick="switchModule('freq',this)" title="Barrido de frecuencia">Barrido en freq.</div>
   <div class="tb-sep"></div>
-  <div class="tb-tab" onclick="switchModule('swr',this)" title="Panel de parámetros: ROE, Γ, RL, VSWR, potencias">Panel ROE/RL</div>
+  <div class="tb-tab" onclick="switchModule('swr',this)" title="Panel de parámetros">Panel ROE/RL</div>
   <div class="tb-sep"></div>
-  <div class="tb-tab" onclick="switchModule('tline',this)" title="Desplaza una impedancia a lo largo de una línea de transmisión">Línea de trans.</div>
+  <div class="tb-tab" onclick="switchModule('tline',this)" title="Línea de transmisión">Línea de trans.</div>
   <div class="tb-right"><span class="badge">RF PRO</span></div>
 </div>
 
-<!-- MODULE 1: SMITH CHART MAIN -->
 <div id="mod-main" class="module active">
   <div class="ibar">
     <div class="ig"><label>Modo</label>
@@ -195,7 +194,6 @@ body{font-family:var(--font-sans);font-size:13px}
     <div class="chart-wrap">
       <canvas id="sc"></canvas>
       <div id="tip"></div>
-      <!-- Zoom controls -->
       <div style="position:absolute;bottom:14px;right:14px;display:flex;align-items:center;gap:4px;z-index:5">
         <button onclick="doZoom(1.4)" title="Acercar" style="width:30px;height:30px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
         <span id="zoom-badge" style="font-size:10px;font-family:var(--font-mono,monospace);color:var(--color-text-tertiary);min-width:28px;text-align:center">1×</span>
@@ -260,7 +258,6 @@ body{font-family:var(--font-sans);font-size:13px}
           </div>
         </div>
 
-        <!-- S11 / TOUCHSTONE TAB -->
         <div id="spt-s11" class="sp-tc">
           <div class="sec">
             <h3>Cargar archivo Touchstone</h3>
@@ -328,7 +325,6 @@ body{font-family:var(--font-sans);font-size:13px}
   </div>
 </div>
 
-<!-- MODULE 2: MATCHING -->
 <div id="mod-match" class="module">
   <div class="ibar">
     <div class="ig"><label>ZL real (Ω)</label><input type="number" id="m-rl" value="100" step="any"></div>
@@ -347,6 +343,7 @@ body{font-family:var(--font-sans);font-size:13px}
           <span class="stag on" id="mt-l" onclick="setMT('l',this)">Red-L</span>
           <span class="stag" id="mt-stub" onclick="setMT('stub',this)">Stub serie</span>
           <span class="stag" id="mt-qw" onclick="setMT('qw',this)">λ/4 transform.</span>
+          <span class="stag" id="mt-h2" onclick="setMT('h2',this)">λ/2 transparente</span>
         </div>
       </div>
       <div id="match-results"><div style="padding:12px;font-size:11px;color:var(--color-text-tertiary)">Ingresa ZL y presiona Calcular</div></div>
@@ -366,7 +363,6 @@ body{font-family:var(--font-sans);font-size:13px}
   </div>
 </div>
 
-<!-- MODULE 3: FREQUENCY SWEEP -->
 <div id="mod-freq" class="module">
   <div class="ibar">
     <div class="ig"><label>R (Ω)</label><input type="number" id="fs-r" value="50" step="any"></div>
@@ -410,7 +406,6 @@ body{font-family:var(--font-sans);font-size:13px}
   </div>
 </div>
 
-<!-- MODULE 4: SWR PANEL -->
 <div id="mod-swr" class="module">
   <div class="ibar">
     <div class="ig"><label>Modo entrada</label>
@@ -449,7 +444,6 @@ body{font-family:var(--font-sans);font-size:13px}
   </div>
 </div>
 
-<!-- MODULE 5: TRANSMISSION LINE -->
 <div id="mod-tline" class="module">
   <div class="ibar">
     <div class="ig"><label>ZL real (Ω)</label><input type="number" id="tl-rl" value="100" step="any"></div>
@@ -524,131 +518,96 @@ let matchType='l';
 const COLS=['#1d9e75','#534ab7','#d85a30','#ba7517','#d4537e','#378add','#e24b4a','#3b6d11'];
 let ctxs={},dims={};
 
-/* ══════════════════════════════════════════════════════════════════
-   ZOOM / PAN — Professional viewport approach
-   ══════════════════════════════════════════════════════════════════
-   The full Smith chart is always rendered at HIGH resolution (BASE_SZ)
-   onto an offscreen canvas with crisp lines and readable fonts.
-   Zoom/pan just crops and scales that image onto the visible canvas.
-   Result: zero distortion, perfect lines, fonts always sharp.
-
-   Viewport: a square region of the offscreen canvas defined by:
-     vp = { x, y, size }  — top-left + side length in OFFSCREEN pixels
-   At zoom=1: vp covers the full offscreen canvas.
-   At zoom>2: vp is a smaller crop centred on the pan target.
-   ══════════════════════════════════════════════════════════════════ */
-
-const BASE_SZ = 1400;   /* offscreen render resolution (px) */
+const BASE_SZ = 1400; 
 let offCanvas = null, offCtx = null;
-let vp = {x:0, y:0, size:BASE_SZ};   /* current viewport into offscreen */
+let vp = {x:0, y:0, size:BASE_SZ}; 
 const ZOOM_MIN=1, ZOOM_MAX=14;
 
 function getScale(){ return BASE_SZ/vp.size; }
-
 function resetZoom(){
   vp={x:0,y:0,size:BASE_SZ};
   updateZoomBadge(); applyViewport();
   const c=document.getElementById('sc');if(c)c.style.cursor='crosshair';
 }
-
-/* factor>1 = zoom in, factor<1 = zoom out
-   pivotCanvX/Y = canvas pixel under which the world point stays fixed */
 function doZoom(factor, pivotCanvX, pivotCanvY){
   const vis=document.getElementById('sc');
   const W=vis?vis.width:BASE_SZ;
-  /* default pivot = canvas centre */
   const px = pivotCanvX!==undefined ? pivotCanvX : W/2;
   const py = pivotCanvY!==undefined ? pivotCanvY : W/2;
-  /* Map canvas pixel to offscreen pixel */
   const ox = vp.x + px*(vp.size/W);
   const oy = vp.y + py*(vp.size/W);
-  /* New viewport size */
   const newSize = Math.max(BASE_SZ/ZOOM_MAX, Math.min(BASE_SZ, vp.size/factor));
-  /* Keep (ox,oy) fixed: vp.x' = ox - px*(newSize/W) */
   vp.x = ox - px*(newSize/W);
   vp.y = oy - py*(newSize/W);
   vp.size = newSize;
   clampPan(); updateZoomBadge(); applyViewport();
   if(vis) vis.style.cursor = vp.size<BASE_SZ*0.98 ? 'grab' : 'crosshair';
 }
-
 function clampPan(){
-  /* Don't pan beyond the offscreen bounds */
   vp.x = Math.max(-(vp.size*0.5), Math.min(BASE_SZ-(vp.size*0.5), vp.x));
   vp.y = Math.max(-(vp.size*0.5), Math.min(BASE_SZ-(vp.size*0.5), vp.y));
 }
-
 function updateZoomBadge(){
   const el=document.getElementById('zoom-badge');
   const s=BASE_SZ/vp.size;
   if(el) el.textContent = s<1.05 ? '1×' : `${s.toFixed(1)}×`;
 }
-
-/* Convert visible-canvas pixel → gamma (for hit-testing/clicking) */
 function canvToGamma(px,py){
   const vis=document.getElementById('sc');if(!vis)return{r:0,i:0};
   const W=vis.width;
-  /* Map to offscreen pixel */
   const ox=vp.x+px*(vp.size/W);
   const oy=vp.y+py*(vp.size/W);
-  /* Map to gamma (offscreen centre is BASE_SZ/2, radius is BASE_SZ*0.44) */
   const R_off=BASE_SZ*0.44;
   const cx_off=BASE_SZ/2, cy_off=BASE_SZ/2;
   return{r:(ox-cx_off)/R_off, i:(cy_off-oy)/R_off};
 }
-/* Convert gamma → visible-canvas pixel */
 function gammaToCanv(gr,gi){
   const vis=document.getElementById('sc');if(!vis)return{x:0,y:0};
   const W=vis.width;
   const R_off=BASE_SZ*0.44;
   const cx_off=BASE_SZ/2, cy_off=BASE_SZ/2;
-  /* Offscreen pixel */
   const ox=cx_off+gr*R_off;
   const oy=cy_off-gi*R_off;
-  /* Map to canvas pixel */
   return{x:(ox-vp.x)/(vp.size/W), y:(oy-vp.y)/(vp.size/W)};
 }
-/* Is a canvas pixel inside the Smith circle? */
 function insideChart(px,py){
   const g=canvToGamma(px,py);
   return Math.hypot(g.r,g.i)<=1.02;
 }
-
-/* Blit the offscreen viewport onto the visible canvas */
 function applyViewport(){
   const vis=document.getElementById('sc');if(!vis||!offCanvas)return;
   const ctx=vis.getContext('2d');
   ctx.clearRect(0,0,vis.width,vis.height);
   ctx.drawImage(offCanvas, vp.x,vp.y,vp.size,vp.size, 0,0,vis.width,vis.height);
-  /* Draw points on top (screen space, no offscreen needed) */
   drawPointsOnVis(ctx, vis.width);
 }
-
-/* ── OFFSCREEN canvas (full-quality Smith chart render) ── */
 function initOffscreen(){
   offCanvas=document.createElement('canvas');
   offCanvas.width=BASE_SZ;offCanvas.height=BASE_SZ;
   offCtx=offCanvas.getContext('2d');
 }
-/* ── VISIBLE canvas (just the viewport crop) ── */
-function setupCanvas(id){
-  const c=document.getElementById(id);if(!c)return;
-  if(id==='sc'){
-    /* Main chart: fill the container — use its actual available space */
-    const wrap=c.parentElement;
-    const avail=Math.min(wrap.clientWidth-12,wrap.clientHeight-12,820);
-    const s=Math.max(300,avail);
-    c.width=s;c.height=s;
-    c.style.width=s+'px';c.style.height=s+'px';
-    if(!offCanvas)initOffscreen();
+function setupCanvas(id) {
+  const c = document.getElementById(id);
+  if (!c) return;
+  if (id === 'sc') {
+    const wrap = c.parentElement;
+    const avail = Math.min(wrap.clientWidth - 12, wrap.clientHeight - 12, 820);
+    const s = Math.max(300, avail);
+    c.width = s; c.height = s;
+    c.style.width = s + 'px'; c.style.height = s + 'px';
+    if (!offCanvas) initOffscreen();
     return c.getContext('2d');
   }
-  /* Other canvases (matching, sweep, tline) — classic approach */
-  const wrap=c.parentElement;
-  const s=Math.min(wrap.clientWidth-20,wrap.clientHeight||520,520);
-  c.width=s;c.height=s;
-  dims[id]={W:s,H:s,cx:s/2,cy:s/2,R:s*0.43};
-  ctxs[id]=c.getContext('2d');
+  const wrap = c.parentElement;
+  const maxS = (id === 'sc2') ? 820 : 520;
+  const s = Math.min(wrap.clientWidth - 20, wrap.clientHeight || maxS, maxS);
+  const dpr = window.devicePixelRatio || 1; 
+  c.width = s * dpr;
+  c.height = s * dpr;
+  c.style.width = s + 'px';
+  c.style.height = s + 'px';
+  dims[id] = { W: s * dpr, H: s * dpr, cx: (s * dpr) / 2, cy: (s * dpr) / 2, R: (s * dpr) * 0.43 };
+  ctxs[id] = c.getContext('2d');
   return ctxs[id];
 }
 function getD(id){
@@ -661,20 +620,16 @@ function getD(id){
 }
 function z2g(rn,xn){const d=(rn+1)**2+xn**2;if(d<1e-12)return{r:1,i:0};return{r:((rn**2+xn**2)-1)/d,i:(2*xn)/d};}
 function g2z(gr,gi){const d=(1-gr)**2+gi**2;if(d<1e-9)return{r:1e9,x:0};return{r:(1-gr**2-gi**2)/d,i:(2*gi)/d};}
-/* Gamma → offscreen canvas pixel (fixed coords, no zoom) */
 function g2off(gr,gi){const R=BASE_SZ*0.44,cx=BASE_SZ/2,cy=BASE_SZ/2;return{x:cx+gr*R,y:cy-gi*R};}
-/* Offscreen pixel → visible canvas pixel */
 function off2vis(ox,oy){
   const vis=document.getElementById('sc');if(!vis)return{x:ox,y:oy};
   const W=vis.width,scale=vp.size/W;
   return{x:(ox-vp.x)/scale,y:(oy-vp.y)/scale};
 }
-/* Offscreen radius → visible canvas radius */
 function offR2vis(or){
   const vis=document.getElementById('sc');if(!vis)return or;
   return or/(vp.size/vis.width);
 }
-/* Gamma → visible canvas pixel (accounts for viewport) */
 function g2c(id,gr,gi){
   if(id==='sc'){const p=g2off(gr,gi);return gammaToCanv(gr,gi);}
   const{cx,cy,R}=getD(id);return{x:cx+gr*R,y:cy-gi*R};
@@ -711,29 +666,18 @@ function getC(){
     ang:isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.07)',
   };
 }
-/* ══════════════════════════════════════════════════════════════════
-   DRAW SMITH CHART onto OFFSCREEN canvas (id==='sc') or visible (others)
-   Font: 16px — large enough to read without squinting.
-   Lines: 1.0-1.5px — crisp on the 1400px surface.
-   ══════════════════════════════════════════════════════════════════ */
 function drawSmith(cid, extraFn){
-  /* For main chart, draw onto offscreen; for others, use their own ctx */
   const isMain=(cid==='sc');
   const ctx = isMain ? offCtx : ctxs[cid];
   if(!ctx)return;
   const{W,H,cx,cy,R}=getD(cid);
   const c=getC();
-  const FNT=isMain?16:11; /* px — fixed size, always crisp */
+  const FNT=isMain?16:11; 
 
   ctx.clearRect(0,0,W,H);
-
-  /* ── Background fill ── */
-  /* Helper: just an alias for ctx.arc — world coords are correct on both
-     offscreen (main) and direct (other charts). */
   function arc(wcx,wcy,wr){ctx.arc(wcx,wcy,wr,0,PI*2);}
   ctx.beginPath();arc(cx,cy,R);ctx.fillStyle=c.bg;ctx.fill();
 
-  /* ── Angle guide lines ── */
   if(layers.ang){[30,60,90,120,150,180].forEach(a=>{
     const rad=a*PI/180;
     ctx.beginPath();
@@ -742,14 +686,12 @@ function drawSmith(cid, extraFn){
     ctx.strokeStyle=c.ang;ctx.lineWidth=0.5;ctx.stroke();
   });}
 
-  /* ── R = const circles ── */
   if(layers.r){[0,0.2,0.5,1,2,5].forEach(rn=>{
     const cr=R/(1+rn),wcx=cx+R-cr;
     ctx.beginPath();ctx.arc(wcx,cy,cr,0,PI*2);
     ctx.strokeStyle=c.rC;ctx.lineWidth=rn===1?1.8:1.0;ctx.setLineDash([]);ctx.stroke();
   });}
 
-  /* ── X = const arcs ── */
   if(layers.x){
     [0.2,0.5,1,2,5].forEach(xn=>{[1,-1].forEach(sg=>{
       const rx=R/xn,wcy2=cy-sg*(R+rx);
@@ -759,20 +701,17 @@ function drawSmith(cid, extraFn){
       ctx.strokeStyle=c.xC;ctx.lineWidth=xn===1?1.4:0.9;ctx.stroke();
       ctx.restore();
     });});
-    /* Real axis dashed line */
     ctx.strokeStyle=c.ang;ctx.lineWidth=0.8;ctx.setLineDash([6,4]);
     ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.stroke();
     ctx.setLineDash([]);
   }
 
-  /* ── Admittance circles ── */
   if(layers.adm){[0,0.2,0.5,1,2,5].forEach(rn=>{
     const cr=R/(1+rn),wcx=cx-R+cr;
     ctx.beginPath();ctx.arc(wcx,cy,cr,0,PI*2);
     ctx.strokeStyle=c.admC;ctx.lineWidth=0.7;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
   });}
 
-  /* ── SWR circle ── */
   if(layers.swr&&swrVal>1.001){
     const gm=(swrVal-1)/(swrVal+1);
     ctx.beginPath();ctx.arc(cx,cy,gm*R,0,PI*2);
@@ -784,29 +723,23 @@ function drawSmith(cid, extraFn){
     }
   }
 
-  /* ── Outer boundary ── */
   ctx.beginPath();ctx.arc(cx,cy,R,0,PI*2);ctx.strokeStyle=c.bnd;ctx.lineWidth=2.2;ctx.stroke();
 
-  /* ── Labels ── */
   if(layers.lbl){
     ctx.font=`400 ${FNT}px var(--font-sans,sans-serif)`;ctx.fillStyle=c.fg2;
-    /* R-axis values */
     [0,0.2,0.5,1,2,5].forEach(rn=>{
       const bx=cx+z2g(rn,0).r*R, by=cy;
       ctx.textAlign='center';ctx.fillText(rn===0?'0':rn.toString(),bx,by+FNT+6);
     });
-    /* X labels */
     [0.5,1,2].forEach(xn=>{[1,-1].forEach(sg=>{
       const g=z2g(0,xn*sg);
       const bx=cx+g.r*R, by=cy-g.i*R;
       ctx.textAlign='left';ctx.fillText(`${sg>0?'+':'−'}j${xn}`,bx+6,by+5);
     });});
-    /* Axis title */
     ctx.fillStyle=c.fg;ctx.font=`500 ${FNT}px var(--font-sans,sans-serif)`;
     ctx.textAlign='center';ctx.fillText('R/Z₀',cx,cy+FNT*2+8);
   }
 
-  /* ── Special points ── */
   if(layers.sp){
     drawDotOff(ctx,cid,'#ba7517',z2g(0,0),'Z₀',c,FNT);
     drawDotOff(ctx,cid,'#e24b4a',{r:-0.998,i:0},'CC',c,FNT);
@@ -814,12 +747,9 @@ function drawSmith(cid, extraFn){
   }
 
   if(extraFn)extraFn(ctx,getD(cid),c);
-
-  /* For main chart: blit offscreen to visible canvas */
   if(isMain)applyViewport();
 }
 
-/* Draw a special dot onto offscreen (world coords) */
 function drawDotOff(ctx,cid,col,g,lbl,c,fnt){
   const{cx,cy,R}=getD(cid);
   const px=cx+g.r*R, py=cy-g.i*R;
@@ -832,39 +762,31 @@ function drawDotOff(ctx,cid,col,g,lbl,c,fnt){
   }
 }
 
-/* Draw user points on TOP of the visible canvas (screen space, after viewport blit) */
 function drawPointsOnVis(ctx, visW){
   if(!points.length)return;
   const c=getC();
-  const scale_f=visW/vp.size; /* offscreen-to-canvas scale factor */
+  const scale_f=visW/vp.size; 
   points.forEach((pt,i)=>{
     const col=COLS[i%COLS.length];
-    /* Position in visible canvas pixels */
     const p=gammaToCanv(pt.g.r,pt.g.i);
-    /* Clip off-screen points */
     if(p.x<-20||p.x>visW+20||p.y<-20||p.y>visW+20)return;
-    /* SWR ring for active point */
     if(i===selPt||i===points.length-1){
       const gm=Math.hypot(pt.g.r,pt.g.i);
       if(gm>0.01){
-        /* radius in visible pixels: gm * R_off * scale_f */
         const rvis=gm*BASE_SZ*0.44*scale_f;
-        const pc=gammaToCanv(0,0); /* chart centre in visible pixels */
+        const pc=gammaToCanv(0,0); 
         ctx.beginPath();ctx.arc(pc.x,pc.y,rvis,0,PI*2);
         ctx.strokeStyle=col+'66';ctx.lineWidth=1.2;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
       }
     }
-    /* Dot */
     const DR=8;
     ctx.beginPath();ctx.arc(p.x,p.y,DR,0,PI*2);ctx.fillStyle=col;ctx.fill();
     ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=2;ctx.stroke();
-    /* Label */
     if(layers.lbl){
       const lbl=pt._label?`Z*(P${i+1})`:pt._tsLabel||`P${i+1}`;
       ctx.fillStyle=col;ctx.font='600 13px var(--font-sans,sans-serif)';
       ctx.textAlign='left';ctx.fillText(lbl,p.x+DR+2,p.y-3);
     }
-    /* Z* ring */
     if(pt._label==='Z*'){
       ctx.beginPath();ctx.arc(p.x,p.y,DR+4,0,PI*2);
       ctx.strokeStyle='#d85a30';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);
@@ -872,27 +794,6 @@ function drawPointsOnVis(ctx, visW){
   });
 }
 
-/* Legacy drawPoints for non-main charts */
-function drawPoints(cid){
-  if(cid==='sc'){
-    /* For main chart, points are drawn in applyViewport via drawPointsOnVis */
-    return;
-  }
-  const ctx=ctxs[cid];if(!ctx)return;
-  const{cx,cy,R,W,H}=getD(cid);const c=getC();
-  points.forEach((pt,i)=>{
-    const col=COLS[i%COLS.length];
-    const bx=cx+pt.g.r*R,by=cy-pt.g.i*R;
-    const DR=6;
-    ctx.beginPath();ctx.arc(bx,by,DR,0,PI*2);ctx.fillStyle=col;ctx.fill();
-    ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=1.5;ctx.stroke();
-    if(layers.lbl){
-      const lbl=pt._label?`Z*`:pt._tsLabel||`P${i+1}`;
-      ctx.fillStyle=col;ctx.font='500 10px var(--font-sans,sans-serif)';
-      ctx.textAlign='left';ctx.fillText(lbl,bx+DR+2,by-2);
-    }
-  });
-}
 function onModeChange(){const m=document.getElementById('inp-mode').value;const la=document.getElementById('lbl-a'),lb=document.getElementById('lbl-b');const gb=document.getElementById('grp-b');const a=document.getElementById('inp-a'),b=document.getElementById('inp-b');if(m==='z'){la.textContent='R (Ω)';lb.textContent='X (Ω)';gb.style.display='';a.value=75;b.value=25;}else if(m==='y'){la.textContent='G (mS)';lb.textContent='B (mS)';gb.style.display='';a.value=10;b.value=5;}else if(m==='gamma'){la.textContent='Γ real (a)';lb.textContent='Γ imag (b)';gb.style.display='';a.value=0.2;b.value=0.3;}else if(m==='rl'){la.textContent='RL (dB)';gb.style.display='none';a.value=15;}else if(m==='vswr'){la.textContent='VSWR';gb.style.display='none';a.value=2;}clearE();}
 function plotMain(){const m=document.getElementById('inp-mode').value;const av=parseFloat(document.getElementById('inp-a').value);const bv=parseFloat(document.getElementById('inp-b').value)||0;let gr,gi;clearE();if(m==='z'){if(isNaN(av)||av<0)return er('R ≥ 0');if(isNaN(bv))return er('X inválido');const g=z2g(av/Z0,bv/Z0);gr=g.r;gi=g.i;}else if(m==='y'){if(isNaN(av)||av<0)return er('G ≥ 0 mS');const Zmag=av*av*1e-6+(bv||0)*(bv||0)*1e-6;if(Zmag<1e-20)return er('Admitancia = 0: circuito abierto');const Zr=av*1e-3/((av*av+bv*bv)*1e-6),Zi=-(bv||0)*1e-3/((av*av+bv*bv)*1e-6);const g=z2g(Zr/Z0,Zi/Z0);gr=g.r;gi=g.i;}else if(m==='gamma'){if(isNaN(av)||isNaN(bv))return er('Valores inválidos');if(Math.hypot(av,bv)>1.001)return er('|Γ| debe ser ≤ 1');gr=av;gi=bv;}else if(m==='rl'){if(isNaN(av)||av<0)return er('RL ≥ 0 dB');gr=Math.pow(10,-av/20);gi=0;}else if(m==='vswr'){if(isNaN(av)||av<1)return er('VSWR ≥ 1');gr=(av-1)/(av+1);gi=0;}if(!isFinite(gr)||!isFinite(gi))return er('Resultado no finito');const mag=Math.hypot(gr,gi);if(mag>1){gr/=mag;gi/=mag;}const freq=parseFloat(document.getElementById('inp-freq').value)||1000;if(freq<=0)return er('Frecuencia > 0');addPt(gr,gi,freq);}
 function addPt(gr,gi,freq){const p=calcParams(gr,gi);p.freq=freq;points.push({g:{r:gr,i:gi},p,freq});selPt=points.length-1;swrVal=Math.min(p.vswr,10);document.getElementById('swr-sl').value=swrVal;document.getElementById('swr-v').textContent=f(swrVal,2);showRes(p,freq);updatePtsList();redrawMain();}
@@ -905,7 +806,6 @@ function exportCSV(){if(!points.length)return;let csv='P,R(Ω),X(Ω),|Γ|,∠Γ(
 function redrawMain(){
   if(!offCanvas)initOffscreen();
   drawSmith('sc',(_ctx,_d,_c)=>{});
-  /* drawSmith already calls applyViewport() which blits + drawPointsOnVis */
 }
 let hoverG=null,isPanning=false,panStart={x:0,y:0},panOrigin={tx:0,ty:0},didPan=false;
 function getCanvasXY(c,e){
@@ -917,16 +817,13 @@ function setupMainEvents(){
   const c=document.getElementById('sc');if(!c)return;
   const tip=document.getElementById('tip');
 
-  /* ── WHEEL ZOOM ── */
   c.addEventListener('wheel',e=>{
     e.preventDefault();
     const{px,py}=getCanvasXY(c,e);
     const factor=e.deltaY<0?1.18:1/1.18;
-    /* zoom toward cursor: keep gamma point under cursor fixed */
     doZoom(factor,px,py);
   },{passive:false});
 
-  /* ── PINCH ZOOM (touch) ── */
   let lastDist=0;
   c.addEventListener('touchstart',e=>{if(e.touches.length===2){lastDist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);}},{passive:true});
   c.addEventListener('touchmove',e=>{
@@ -938,7 +835,6 @@ function setupMainEvents(){
     }
   },{passive:false});
 
-  /* ── DRAG PAN ── */
   c.addEventListener('mousedown',e=>{
     if(e.button!==0)return;
     const{px,py}=getCanvasXY(c,e);
@@ -957,7 +853,6 @@ function setupMainEvents(){
       vp.y=panOrigin.y-dy*scale;
       clampPan();redrawMain();
     }
-    /* tooltip on hover */
     if(!didPan){
       if(inside('sc',px,py)){
         const g=c2g('sc',px,py);
@@ -976,7 +871,6 @@ function setupMainEvents(){
   });
   window.addEventListener('mouseup',()=>{isPanning=false;const cv=document.getElementById('sc');if(cv)cv.style.cursor=vp.size<BASE_SZ*0.98?'grab':'crosshair';});
 
-  /* ── MOUSEMOVE when not dragging (for tooltip) ── */
   c.addEventListener('mousemove',e=>{
     if(isPanning)return;
     const{px,py}=getCanvasXY(c,e);
@@ -1003,7 +897,6 @@ function setupMainEvents(){
   });
   c.addEventListener('mouseleave',()=>{hoverG=null;tip.style.display='none';if(!isPanning)redrawMain();});
 
-  /* ── CLICK to place point (only if not panning) ── */
   c.addEventListener('click',e=>{
     if(didPan){didPan=false;return;}
     const{px,py}=getCanvasXY(c,e);
@@ -1017,84 +910,151 @@ function setupMainEvents(){
     addPt(g.r,g.i,freq);spTab('res',document.querySelector('.sp-tab'));
   });
 
-  /* ── DOUBLE-CLICK reset zoom ── */
   c.addEventListener('dblclick',e=>{e.preventDefault();resetZoom();});
 }
 function setMT(t,el){matchType=t;document.querySelectorAll('.stag').forEach(e=>e.classList.remove('on'));el.classList.add('on');}
-function calcMatch(){const RL=parseFloat(document.getElementById('m-rl').value);const XL=parseFloat(document.getElementById('m-xl').value);const Z0m=parseFloat(document.getElementById('m-z0').value)||50;const fMHz=parseFloat(document.getElementById('m-freq').value)||1000;const omega=2*PI*fMHz*1e6;const gl=z2g(RL/Z0m,XL/Z0m);let e1='—',e2='—',bw='—',qv='—',rlAfter='—',top='—',desc='';
-if(matchType==='l'){
-  /* ── RED-L: algoritmo unificado, verificado numericamente (Pozar §5.1) ──
-   * TOPO A — shunt junto a FUENTE, serie junto a ZL  →  válida RL ≤ Z0
-   *   X' = ±√(RL·(Z0−RL)),  Xs = X'−XL,  Xp = −Z0·RL/X'
-   * TOPO B — shunt junto a ZL, serie junto a FUENTE  →  válida RL ≥ Z0 (o ZL compleja)
-   *   Cuadrática: (RL−Z0)·Xp²−2·Z0·XL·Xp−Z0·(RL²+XL²)=0,  Xs=−Im(ZL‖jXp) */
-  const fmtC=(X)=>{if(!isFinite(X)||Math.abs(X)<1e-9)return'0 Ω';return X>0?`L = ${f(X/omega*1e9,3)} nH`:`C = ${f(-1/(omega*X)*1e12,3)} pF`;};
-  function ZZpar(ar,ai,br,bi){const ma=ar**2+ai**2,mb=br**2+bi**2;if(ma<1e-20)return{r:br,i:bi};if(mb<1e-20)return{r:ar,i:ai};const Yr=ar/ma+br/mb,Yi=-ai/ma-bi/mb;const mY=Yr**2+Yi**2;return mY<1e-20?{r:1e9,i:0}:{r:Yr/mY,i:-Yi/mY};}
-  function isOk(v){return isFinite(v.r)&&isFinite(v.i)&&Math.abs(v.r-Z0m)<1&&Math.abs(v.i)<1;}
-  let sols=[];
-  if(RL<=0){e1='RL debe ser > 0 Ω';e2='—';}
-  else if(Math.abs(RL-Z0m)<0.1&&Math.abs(XL)<0.1){e1='ZL ≈ Z₀: ya adaptada';e2='—';top='Sin red requerida';}
-  else{
-    if(RL<=Z0m+0.01){
-      const disc=RL*(Z0m-RL);
-      if(disc>=0){[Math.sqrt(disc),-Math.sqrt(disc)].forEach(Xp_=>{if(Math.abs(Xp_)<1e-9)return;const Xs=Xp_-XL,Xp=-Z0m*RL/Xp_;const v=ZZpar(0,Xp,RL,XL+Xs);if(isOk(v))sols.push({Xs,Xp,e1:'Serie (carga): '+fmtC(Xs),e2:'Shunt (fuente): '+fmtC(Xp),Q:Math.abs(Xp_)/Z0m,topo:'A'});});}
-    }
-    {const a=RL-Z0m,b=-2*Z0m*XL,c=-Z0m*(RL**2+XL**2),disc=b**2-4*a*c;
-     const tryXp=(Xp)=>{if(!isFinite(Xp)||Math.abs(Xp)<1e-12)return;const Zp=ZZpar(RL,XL,0,Xp);const Xs=-Zp.i;const v={r:Zp.r,i:Zp.i+Xs};if(isOk(v))sols.push({Xs,Xp,e1:'Shunt (carga): '+fmtC(Xp),e2:'Serie (fuente): '+fmtC(Xs),Q:Math.sqrt(Math.max(0,Z0m/RL-1)),topo:'B'});};
-     if(Math.abs(a)<1e-9){if(Math.abs(b)>1e-9)tryXp(-c/b);}else if(disc>=0){const sq=Math.sqrt(disc);tryXp((-b+sq)/(2*a));tryXp((-b-sq)/(2*a));}}
-    sols=sols.filter((s,i)=>!sols.slice(0,i).some(t=>Math.abs(t.Xs-s.Xs)<0.1&&Math.abs(t.Xp-s.Xp)<0.1));
-    if(sols.length>=1){
-      e1=sols[0].e1;e2=sols[0].e2;
-      top=sols.length>=2?`Sol.1 (Topo ${sols[0].topo}) | Sol.2: ${sols[1].e1.split(': ')[1]} / ${sols[1].e2.split(': ')[1]}`:`Red-L Topo ${sols[0].topo}`;
-    }else{e1='Sin solución con 2 elem.';e2='Considerar red π o T';top='Sin solución';}
-  }
-  const Qbest=sols[0]?.Q||0;
-  bw=Qbest>0.01?`${f(fMHz/Qbest,1)} MHz (BW≈f/Q)`:'Banda ancha';
-  qv=Qbest>0.01?f(Qbest,3):'<0.1';rlAfter='> 40 dB';
-  desc=`Red-L verificada numéricamente. ${sols.length>1?`${sols.length} soluciones — elegir por componentes disponibles.`:'Solución única.'} Q=${f(Qbest,2)}. Topo. ${sols[0]?.topo==='A'?'A: shunt@fuente + serie@carga (RL≤Z₀)':'B: shunt@carga + serie@fuente (RL≥Z₀)'}.`;
-} else if(matchType==='stub'){
-  /* STUB PARALELO — método de admitancias, verificado analíticamente (Pozar §5.3)
-   * y_in(d) = (yL + j·t)/(1 + j·yL·t),  t = tan(βd)
-   * Re(y_in)=1 → (yLr−|yL|²)·t² + 2·yLi·t + (yLr−1) = 0
-   * Stub SC: B = −cot(βl),  Stub OC: B = tan(βl)  */
-  const lambda=C0/(fMHz*1e6)*1000;
-  const rn=RL/Z0m, xn=XL/Z0m;
-  if(rn<=0){e1='RL debe ser > 0 Ω';e2='—';top='Sin solución';}
-  else{
-    const yLr=rn/(rn*rn+xn*xn), yLi=-xn/(rn*rn+xn*xn);
-    const yL2=yLr*yLr+yLi*yLi;
-    const A=yLr-yL2, B2=2*yLi, CC=yLr-1;
-    let ts=[];
-    if(Math.abs(A)<1e-10){if(Math.abs(B2)>1e-10)ts.push(-CC/B2);}
-    else{const disc=B2*B2-4*A*CC;if(disc>=0){const sq=Math.sqrt(disc);ts.push((-B2+sq)/(2*A));ts.push((-B2-sq)/(2*A));}}
-    if(ts.length===0){e1='Sin solución para esta ZL';e2='—';top='Sin solución';}
+function calcMatch(){
+  const RL=parseFloat(document.getElementById('m-rl').value);
+  const XL=parseFloat(document.getElementById('m-xl').value);
+  const Z0m=parseFloat(document.getElementById('m-z0').value)||50;
+  const fMHz=parseFloat(document.getElementById('m-freq').value)||1000;
+  const omega=2*PI*fMHz*1e6;
+  const gl=z2g(RL/Z0m,XL/Z0m);
+  let e1='—',e2='—',bw='—',qv='—',rlAfter='—',top='—',desc='';
+
+  if(matchType==='l'){
+    const fmtC=(X)=>{if(!isFinite(X)||Math.abs(X)<1e-9)return'0 Ω';return X>0?`L = ${f(X/omega*1e9,3)} nH`:`C = ${f(-1/(omega*X)*1e12,3)} pF`;};
+    function ZZpar(ar,ai,br,bi){const ma=ar**2+ai**2,mb=br**2+bi**2;if(ma<1e-20)return{r:br,i:bi};if(mb<1e-20)return{r:ar,i:ai};const Yr=ar/ma+br/mb,Yi=-ai/ma-bi/mb;const mY=Yr**2+Yi**2;return mY<1e-20?{r:1e9,i:0}:{r:Yr/mY,i:-Yi/mY};}
+    function isOk(v){return isFinite(v.r)&&isFinite(v.i)&&Math.abs(v.r-Z0m)<1&&Math.abs(v.i)<1;}
+    let sols=[];
+    if(RL<=0){e1='RL debe ser > 0 Ω';e2='—';}
+    else if(Math.abs(RL-Z0m)<0.1&&Math.abs(XL)<0.1){e1='ZL ≈ Z₀: ya adaptada';e2='—';top='Sin red requerida';}
     else{
-      const sols=ts.map((t,idx)=>{
-        const d_wl=((Math.atan(t)/(2*PI))%0.5+0.5)%0.5;
-        const dMm=d_wl*lambda;
-        const dr=1-yLi*t, di=yLr*t, denom=dr*dr+di*di;
-        const yi_i=denom>1e-12?((yLi+t)*dr-yLr*di)/denom:0;
-        const bs=-yi_i;
-        const lSC=(((Math.atan(Math.abs(bs)<1e-10?1e10:-1/bs)/(2*PI))%0.5)+0.5)%0.5*lambda;
-        const lOC=(((Math.atan(bs)/(2*PI))%0.5)+0.5)%0.5*lambda;
-        return{dMm,d_wl,lSC,lOC};
-      });
-      const r=sols[0];
-      e1=`d = ${f(r.dMm,1)} mm  (${f(r.d_wl*360,1)}°)`;
-      e2=`Stub SC: ${f(r.lSC,1)} mm  |  Stub CA: ${f(r.lOC,1)} mm`;
-      top=sols[1]?`Sol. 2: d=${f(sols[1].dMm,1)}mm  SC=${f(sols[1].lSC,1)}mm  CA=${f(sols[1].lOC,1)}mm`:'Stub paralelo';
-      bw=`~${f(fMHz*0.1,0)} MHz`; qv='Variable'; rlAfter='> 30 dB';
-      desc='Stub paralelo a distancia d de ZL. SC=stub cortocircuito, CA=stub circuito abierto. Sin componentes lumped — solo línea de transmisión. Se muestran dos soluciones. Fórmula: (yLr−|yL|²)t²+2yLi·t+(yLr−1)=0 verificada yin=Z₀.';
+      if(RL<=Z0m+0.01){
+        const disc=RL*(Z0m-RL);
+        if(disc>=0){[Math.sqrt(disc),-Math.sqrt(disc)].forEach(Xp_=>{if(Math.abs(Xp_)<1e-9)return;const Xs=Xp_-XL,Xp=-Z0m*RL/Xp_;const v=ZZpar(0,Xp,RL,XL+Xs);if(isOk(v))sols.push({Xs,Xp,e1:'Serie (carga): '+fmtC(Xs),e2:'Shunt (fuente): '+fmtC(Xp),Q:Math.abs(Xp_)/Z0m,topo:'A'});});}
+      }
+      {const a=RL-Z0m,b=-2*Z0m*XL,c=-Z0m*(RL**2+XL**2),disc=b**2-4*a*c;
+       const tryXp=(Xp)=>{if(!isFinite(Xp)||Math.abs(Xp)<1e-12)return;const Zp=ZZpar(RL,XL,0,Xp);const Xs=-Zp.i;const v={r:Zp.r,i:Zp.i+Xs};if(isOk(v))sols.push({Xs,Xp,e1:'Shunt (carga): '+fmtC(Xp),e2:'Serie (fuente): '+fmtC(Xs),Q:Math.sqrt(Math.max(0,Z0m/RL-1)),topo:'B'});};
+       if(Math.abs(a)<1e-9){if(Math.abs(b)>1e-9)tryXp(-c/b);}else if(disc>=0){const sq=Math.sqrt(disc);tryXp((-b+sq)/(2*a));tryXp((-b-sq)/(2*a));}}
+      sols=sols.filter((s,i)=>!sols.slice(0,i).some(t=>Math.abs(t.Xs-s.Xs)<0.1&&Math.abs(t.Xp-s.Xp)<0.1));
+      if(sols.length>=1){
+        e1=sols[0].e1;e2=sols[0].e2;
+        top=sols.length>=2?`Sol.1 (Topo ${sols[0].topo}) | Sol.2: ${sols[1].e1.split(': ')[1]} / ${sols[1].e2.split(': ')[1]}`:`Red-L Topo ${sols[0].topo}`;
+      }else{e1='Sin solución con 2 elem.';e2='Considerar red π o T';top='Sin solución';}
     }
+    const Qbest=sols[0]?.Q||0;
+    bw=Qbest>0.01?`${f(fMHz/Qbest,1)} MHz (BW≈f/Q)`:'Banda ancha';
+    qv=Qbest>0.01?f(Qbest,3):'<0.1';rlAfter='> 40 dB';
+    desc=`Red-L verificada numéricamente. ${sols.length>1?`${sols.length} soluciones.`:'Solución única.'} Q=${f(Qbest,2)}. Topo. ${sols[0]?.topo==='A'?'A: shunt@fuente + serie@carga (RL≤Z₀)':'B: shunt@carga + serie@fuente (RL≥Z₀)'}.`;
+  } else if(matchType==='stub'){
+    const lambda=C0/(fMHz*1e6)*1000;
+    const rn=RL/Z0m, xn=XL/Z0m;
+    if(rn<=0){e1='RL debe ser > 0 Ω';e2='—';top='Sin solución';}
+    else{
+      const yLr=rn/(rn*rn+xn*xn), yLi=-xn/(rn*rn+xn*xn);
+      const yL2=yLr*yLr+yLi*yLi;
+      const A=yLr-yL2, B2=2*yLi, CC=yLr-1;
+      let ts=[];
+      if(Math.abs(A)<1e-10){if(Math.abs(B2)>1e-10)ts.push(-CC/B2);}
+      else{const disc=B2*B2-4*A*CC;if(disc>=0){const sq=Math.sqrt(disc);ts.push((-B2+sq)/(2*A));ts.push((-B2-sq)/(2*A));}}
+      if(ts.length===0){e1='Sin solución para esta ZL';e2='—';top='Sin solución';}
+      else{
+        const sols=ts.map((t,idx)=>{
+          const d_wl=((Math.atan(t)/(2*PI))%0.5+0.5)%0.5;
+          const dMm=d_wl*lambda;
+          const dr=1-yLi*t, di=yLr*t, denom=dr*dr+di*di;
+          const yi_i=denom>1e-12?((yLi+t)*dr-yLr*di)/denom:0;
+          const bs=-yi_i;
+          const lSC=(((Math.atan(Math.abs(bs)<1e-10?1e10:-1/bs)/(2*PI))%0.5)+0.5)%0.5*lambda;
+          const lOC=(((Math.atan(bs)/(2*PI))%0.5)+0.5)%0.5*lambda;
+          return{dMm,d_wl,lSC,lOC};
+        });
+        const r=sols[0];
+        e1=`d = ${f(r.dMm,1)} mm  (${f(r.d_wl*360,1)}°)`;
+        e2=`Stub SC: ${f(r.lSC,1)} mm  |  Stub CA: ${f(r.lOC,1)} mm`;
+        top=sols[1]?`Sol. 2: d=${f(sols[1].dMm,1)}mm  SC=${f(sols[1].lSC,1)}mm`:'Stub paralelo';
+        bw=`~${f(fMHz*0.1,0)} MHz`; qv='Variable'; rlAfter='> 30 dB';
+        desc='Stub paralelo a distancia d de ZL. SC=stub cortocircuito, CA=stub circuito abierto. Sin componentes lumped — solo línea de transmisión.';
+      }
+    }
+  } else if (matchType === 'h2') {
+    e1 = `Línea λ/2`;
+    e2 = `Long. = ${f((C0 / (fMHz * 1e6)) / 2 * 1000, 1)} mm`;
+    bw = `~${f(fMHz * 0.1, 0)} MHz`;
+    qv = 'N/A';
+    rlAfter = 'Igual a ZL';
+    top = 'Transformador λ/2';
+    desc = 'Una línea de transmisión de media longitud de onda (λ/2) es "transparente" a la frecuencia de diseño. Su impedancia de entrada es idéntica a la impedancia de carga (Zin = ZL).';
+  } else {
+    if (Math.abs(XL) > 0.1) return alert('λ/4 requiere ZL puramente real (XL ≈ 0)');
+    if (RL <= 0) return alert('λ/4 requiere RL > 0');
+    const Zqw = Math.sqrt(Z0m * RL);
+    e1 = `Z₀_transf = ${f(Zqw, 2)} Ω`;
+    e2 = `Long. = ${f((C0 / (fMHz * 1e6)) / 4 * 1000, 1)} mm`;
+    bw = `~${f(fMHz * 0.2, 0)} MHz`;
+    qv = 'N/A';
+    rlAfter = '> 40 dB';
+    top = 'Transformador λ/4';
+    desc = 'Sección de λ/4 con Z₀_transf = √(Z₀·ZL). Transforma RL real → Z₀. Da una rotación de 180° en una carta normalizada a Z₀_transf.';
   }
-} else {
-  if(Math.abs(XL)>0.1)return alert('λ/4 requiere ZL puramente real (XL ≈ 0)');
-  if(RL<=0)return alert('λ/4 requiere RL > 0');
-  const Zqw=Math.sqrt(Z0m*RL);
-  e1=`Z₀_transf = ${f(Zqw,2)} Ω`;e2=`Long. = ${f((C0/(fMHz*1e6))/4*1000,1)} mm`;bw=`~${f(fMHz*0.2,0)} MHz`;qv='N/A';rlAfter='> 40 dB';top='λ/4 transformer';
-  desc='Sección de λ/4 con Z₀_transf = √(Z₀·ZL). Transforma RL real → Z₀. Banda angosta. Ampliamente usado en divisores Wilkinson, filtros y combinadores de potencia.';
+
+  document.getElementById('match-cards').style.display = 'grid';
+  s('mc-e1', e1); s('mc-e2', e2); s('mc-bw', bw); s('mc-q', qv); s('mc-rl', rlAfter); s('mc-top', top);
+  document.getElementById('match-desc').textContent = desc;
+
+  setupCanvas('sc2');
+  drawSmith('sc2', (ctx, d, c) => {
+    const pL = g2c('sc2', gl.r, gl.i);
+    const gmag = Math.hypot(gl.r, gl.i);
+    const angL = Math.atan2(-gl.i, gl.r);
+
+    if (gmag > 0.01) {
+      ctx.beginPath();
+      ctx.arc(d.cx, d.cy, gmag * d.R, 0, PI * 2);
+      ctx.strokeStyle = c.swr; 
+      ctx.lineWidth = 1.5 * (window.devicePixelRatio || 1);
+      ctx.setLineDash([6, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+
+    ctx.lineWidth = 3 * (window.devicePixelRatio || 1);
+    ctx.lineCap = 'round';
+
+    if (matchType === 'h2') {
+      ctx.beginPath();
+      ctx.arc(d.cx, d.cy, gmag * d.R, 0, PI * 2);
+      ctx.strokeStyle = '#534ab7';
+      ctx.stroke();
+    } else if (matchType === 'qw') {
+      ctx.beginPath();
+      ctx.arc(d.cx, d.cy, gmag * d.R, angL, angL + PI);
+      ctx.strokeStyle = '#3b6d11';
+      ctx.stroke();
+    } else if (matchType === 'stub' || matchType === 'l') {
+      ctx.beginPath();
+      ctx.moveTo(pL.x, pL.y);
+      ctx.lineTo(d.cx, d.cy);
+      ctx.strokeStyle = '#1d9e75';
+      ctx.stroke();
+    }
+
+    const drawPt = (px, py, col, label) => {
+      const dpr = window.devicePixelRatio || 1;
+      ctx.beginPath(); ctx.arc(px, py, 7 * dpr, 0, PI * 2); 
+      ctx.fillStyle = col; ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.8)'; ctx.lineWidth = 2 * dpr; ctx.stroke();
+      if (layers.lbl && c) {
+        ctx.fillStyle = c.fg; ctx.font = `600 ${12 * dpr}px var(--font-sans,sans-serif)`;
+        ctx.fillText(label, px + 10 * dpr, py - 4 * dpr);
+      }
+    };
+
+    drawPt(pL.x, pL.y, '#d85a30', 'ZL');
+    drawPt(d.cx, d.cy, '#1d9e75', 'Z₀');
+  });
 }
-document.getElementById('match-cards').style.display='grid';s('mc-e1',e1);s('mc-e2',e2);s('mc-bw',bw);s('mc-q',qv);s('mc-rl',rlAfter);s('mc-top',top);document.getElementById('match-desc').textContent=desc;setupCanvas('sc2');drawSmith('sc2',(ctx,d,c)=>{const p=g2c('sc2',gl.r,gl.i);ctx.beginPath();ctx.arc(p.x,p.y,6,0,PI*2);ctx.fillStyle='#d85a30';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.stroke();const gmag=Math.hypot(gl.r,gl.i);if(gmag>0.01){ctx.beginPath();ctx.arc(d.cx,d.cy,gmag*d.R,0,PI*2);ctx.strokeStyle='rgba(216,90,48,0.4)';ctx.lineWidth=0.8;ctx.setLineDash([4,2]);ctx.stroke();ctx.setLineDash([]);}const cp=g2c('sc2',0,0);ctx.beginPath();ctx.arc(cp.x,cp.y,6,0,PI*2);ctx.fillStyle='#1d9e75';ctx.fill();if(layers.lbl&&c){ctx.fillStyle=c.fg2;ctx.font=`400 9px var(--font-sans,sans-serif)`;ctx.textAlign='left';ctx.fillText('ZL',p.x+8,p.y-3);ctx.fillText('Z₀',cp.x+8,cp.y-3);}});}
 function clearMatch(){document.getElementById('match-cards').style.display='none';document.getElementById('match-results').innerHTML='<div style="padding:12px;font-size:11px;color:var(--color-text-tertiary)">Ingresa ZL y presiona Calcular</div>';setupCanvas('sc2');drawSmith('sc2');}
 let sweepData=[];
 function fsModeChange(){const m=document.getElementById('fs-model').value;const l1=document.getElementById('fs-lbl1'),l2=document.getElementById('fs-lbl2');const g2=document.getElementById('fs-grp2');if(m==='rl'){l1.textContent='L (nH)';g2.style.display='none';}else{l1.textContent='L (nH)';l2.textContent='C (pF)';g2.style.display='';}}
@@ -1103,7 +1063,7 @@ function clearSweep(){sweepData=[];setupCanvas('sc3');drawSmith('sc3');['sw-f1',
 function swpModeChange(){const m=document.getElementById('swp-mode').value;const la=document.getElementById('swp-la'),lb=document.getElementById('swp-lb');const gb=document.getElementById('swp-gb');const a=document.getElementById('swp-a');if(m==='z'){la.textContent='R (Ω)';lb.textContent='X (Ω)';gb.style.display='';a.value=75;}else if(m==='gamma'){la.textContent='|Γ| magnitud';gb.style.display='none';a.value=0.333;}else if(m==='rl'){la.textContent='Return Loss (dB)';gb.style.display='none';a.value=9.5;}else if(m==='vswr'){la.textContent='VSWR / ROE';gb.style.display='none';a.value=2;}else if(m==='pr'){la.textContent='Pᵣ % reflejada';gb.style.display='none';a.value=11.1;}}
 function calcSWR(){const m=document.getElementById('swp-mode').value;const av=parseFloat(document.getElementById('swp-a').value);const bv=parseFloat(document.getElementById('swp-b').value)||0;const Z0s=parseFloat(document.getElementById('swp-z0').value)||50;const Pin=parseFloat(document.getElementById('swp-pin').value)||1;let gr,gi,mag;if(isNaN(av))return;if(m==='z'){const g=z2g(Math.max(0,av)/Z0s,bv/Z0s);gr=g.r;gi=g.i;mag=Math.min(Math.hypot(gr,gi),1);}else if(m==='gamma'){mag=Math.max(0,Math.min(1,av));gr=mag;gi=0;}else if(m==='rl'){if(av<0)return;mag=Math.min(1,Math.pow(10,-av/20));gr=mag;gi=0;}else if(m==='vswr'){if(av<1)return;mag=Math.min(1,(av-1)/(av+1));gr=mag;gi=0;}else if(m==='pr'){if(av<0||av>100)return;mag=Math.sqrt(av/100);gr=mag;gi=0;}const vswr=mag<0.9999?(1+mag)/(1-mag):9999;const rl=mag>1e-5?-20*Math.log10(mag):99.9;const pr=mag**2*100,pt=Math.max(0,(1-mag**2)*100);const ml=pt>0.01?-10*Math.log10(pt/100):99.9;const Pr=Pin*pr/100,Pt=Pin*pt/100;const z=g2z(gr,gi);const ang=Math.atan2(gi,gr)*180/PI;const rAbs=z.r*Z0s,xAbs=z.i*Z0s;const den=rAbs**2+xAbs**2,G=den>1e-10?rAbs/den*1000:0,B=den>1e-10?-xAbs/den*1000:0;function setCard(id,val,sub,pctEl,pct,col){document.getElementById(id).textContent=val;document.getElementById(id+'-s').textContent=sub;const p=document.getElementById(id+'-p');p.style.width=Math.min(100,Math.max(0,pct))+'%';p.style.background=col;}document.getElementById('sw-vswr').textContent=vswr>999?'∞':f(vswr,3);document.getElementById('sw-vswr-s').textContent=vswr<1.5?'Excelente':vswr<2?'Buena':vswr<3?'Aceptable':vswr<10?'Pobre':'Muy pobre';document.getElementById('sw-vswr-p').style.width=Math.min(100,(vswr-1)/9*100)+'%';setCard('sw-gm',f(mag,4),`∠Γ = ${f(ang,1)}°`,'sw-gm-p',mag*100,'#378add');setCard('sw-rl',rl>60?'∞ dB':f(rl,2)+' dB',rl>20?'Excelente':rl>10?'Buena':rl>6?'Aceptable':'Pobre','sw-rl-p',Math.min(100,rl/40*100),'#d85a30');setCard('sw-pr',f(pr,2)+' %',`${f(Pr*1000,2)} mW de ${f(Pin*1000,0)} mW`,'sw-pr-p',Math.min(100,pr),'#e24b4a');setCard('sw-pt',f(pt,2)+' %',`${f(Pt*1000,2)} mW transmitidos`,'sw-pt-p',Math.min(100,pt),'#1d9e75');setCard('sw-ml',ml>60?'∞ dB':f(ml,3)+' dB','Pérdida por desalineación','sw-ml-p',Math.min(100,ml*10),'#7f77dd');s('swr-gc',`${f(gr,4)}${gi>=0?'+':'-'}j${f(Math.abs(gi),4)}`);s('swr-ga',`${f(ang,2)}°`);s('swr-z',fz(rAbs,xAbs)+' Ω');s('swr-y',`${f(G,3)}${B>=0?'+':'-'}j${f(Math.abs(B),3)} mS`);}
 function calcTline(){const RL=parseFloat(document.getElementById('tl-rl').value);const XL=parseFloat(document.getElementById('tl-xl').value)||0;const Z0t=parseFloat(document.getElementById('tl-z0').value)||50;const fMHz=parseFloat(document.getElementById('tl-freq').value)||1000;const lenMm=Math.max(0,parseFloat(document.getElementById('tl-len').value)||0);const er=Math.max(1,parseFloat(document.getElementById('tl-er').value)||1);const att=Math.max(0,parseFloat(document.getElementById('tl-att').value)||0);if(isNaN(RL)||RL<0)return;const vp=C0/Math.sqrt(er);const lam=vp/(fMHz*1e6)*1000;const beta=2*PI/(lam/1000);const bl=beta*lenMm/1000;const tau=lenMm/1000/vp;const elen=bl*180/PI;let Rin,Xin;if(lenMm<1e-6){Rin=RL;Xin=XL;}else{const cosbl=Math.cos(bl);if(Math.abs(cosbl)<1e-6){Rin=Z0t**2/(RL>0?RL:1e-9);Xin=0;}else{const tanBl=Math.tan(bl);const Nr=RL-XL*tanBl,Ni=XL+Z0t*tanBl,Dr=Z0t-XL*tanBl,Di=RL*tanBl,dd=Dr**2+Di**2;if(dd<1e-12){Rin=1e9;Xin=0;}else{Rin=Z0t*(Nr*Dr+Ni*Di)/dd;Xin=Z0t*(Ni*Dr-Nr*Di)/dd;}}}if(att>0){const aFactor=Math.pow(10,-att*lenMm/1000/10);Rin*=aFactor;}const gL=z2g(RL/Z0t,XL/Z0t);const gin=z2g(Rin/Z0t,Xin/Z0t);const magL=Math.min(1,Math.hypot(gL.r,gL.i)),magIn=Math.min(1,Math.hypot(gin.r,gin.i));const vsL=magL<0.9999?(1+magL)/(1-magL):9999,vsIn=magIn<0.9999?(1+magIn)/(1-magIn):9999;const rlL=magL>1e-5?-20*Math.log10(magL):99.9,rlIn=magIn>1e-5?-20*Math.log10(magIn):99.9;const Zqw=Z0t**2/(RL>0?RL:1e-9),Zh2=RL;s('tl-lam',`${f(lam,2)} mm`);s('tl-elen',`${f(elen,1)}° (${f(elen/360,4)}\u03bb)`);s('tl-bl',f(bl,4));s('tl-tau',`${f(tau*1e9,3)} ns`);s('tl-zin',fz(Rin,Xin)+' \u03a9');s('tl-rin',`${f(Rin,2)} \u03a9`);s('tl-xin',`${Xin>=0?'+':''}${f(Xin,2)} \u03a9`);s('tl-gin',f(magIn,4));const ve=document.getElementById('tl-vin');ve.textContent=vsIn>999?'\u221e':f(vsIn,3);ve.className='mv '+(vsIn<1.5?'ok':vsIn<3?'':vsIn<6?'wa':'ba');s('tl-rlin',rlIn>60?'\u221e dB':`${f(rlIn,2)} dB`);s('tl-gl',f(magL,4));const vle=document.getElementById('tl-vl');vle.textContent=vsL>999?'\u221e':f(vsL,3);vle.className='mv '+(vsL<1.5?'ok':vsL<3?'':vsL<6?'wa':'ba');s('tl-rll',rlL>60?'\u221e dB':`${f(rlL,2)} dB`);s('tl-q4',`${f(Zqw,2)} \u03a9`);s('tl-h2',`${f(Zh2,2)} \u03a9 (= ZL)`);setupCanvas('sc4');drawSmith('sc4',(ctx,d,c)=>{const pL=g2c('sc4',gL.r,gL.i),pIn=g2c('sc4',gin.r,gin.i);const N=80;const pts=[];for(let k=0;k<=N;k++){const blk=bl*k/N;let Rk,Xk;if(Math.abs(Math.cos(blk))<1e-6){Rk=Z0t**2/(RL>0?RL:1e-9);Xk=0;}else{const tbk=Math.tan(blk);const Nr=RL-XL*tbk,Ni=XL+Z0t*tbk,Dr=Z0t-XL*tbk,Di=RL*tbk,dk=Dr**2+Di**2;Rk=dk>1e-12?Z0t*(Nr*Dr+Ni*Di)/dk:1e9;Xk=dk>1e-12?Z0t*(Ni*Dr-Nr*Di)/dk:0;}const gk=z2g(Rk/Z0t,Xk/Z0t);const pp=g2c('sc4',gk.r,gk.i);if(isFinite(pp.x)&&isFinite(pp.y))pts.push(pp);}if(pts.length>1){ctx.beginPath();ctx.moveTo(pts[0].x,pts[0].y);pts.forEach(p=>ctx.lineTo(p.x,p.y));ctx.strokeStyle='rgba(83,74,183,0.7)';ctx.lineWidth=1.5;ctx.stroke();}ctx.beginPath();ctx.arc(pL.x,pL.y,6,0,PI*2);ctx.fillStyle='#d85a30';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1;ctx.stroke();ctx.beginPath();ctx.arc(pIn.x,pIn.y,6,0,PI*2);ctx.fillStyle='#534ab7';ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.stroke();if(layers.lbl&&c){ctx.fillStyle=c.fg2;ctx.font=`400 9px var(--font-sans,sans-serif)`;ctx.textAlign='left';ctx.fillText('ZL',pL.x+8,pL.y-3);ctx.fillText('Zin',pIn.x+8,pIn.y-3);}});}
-function switchModule(name,el){document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));document.querySelectorAll('.tb-tab').forEach(t=>t.classList.remove('active'));document.getElementById(`mod-${name}`).classList.add('active');el.classList.add('active');document.getElementById('st-mod').textContent=el.textContent.trim();setTimeout(()=>{if(name==='main'){setupCanvas('sc');redrawMain();}else if(name==='match'){setupCanvas('sc2');drawSmith('sc2');}else if(name==='freq'){setupCanvas('sc3');drawSmith('sc3');fsModeChange();}else if(name==='tline'){setupCanvas('sc4');drawSmith('sc4');}},30);}
+function switchModule(name,el){document.querySelectorAll('.module').forEach(m=>m.classList.remove('active'));document.querySelectorAll('.tb-tab').forEach(t=>t.classList.remove('active'));document.getElementById(`mod-${name}`).classList.add('active');el.classList.add('active');document.getElementById('st-mod').textContent=el.textContent.trim();setTimeout(()=>{if(name==='main'){setupCanvas('sc');redrawMain();}else if(name==='match'){setupCanvas('sc2');drawSmith('sc2');}else if(name==='freq'){setupCanvas('sc3');if(sweepData.length)runSweep();}else if(name==='tline'){setupCanvas('sc4');drawSmith('sc4');}},30);}
 function spTab(name,el){document.querySelectorAll('.sp-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('.sp-tc').forEach(t=>t.classList.remove('active'));const tc=document.getElementById(`spt-${name}`);if(tc)tc.classList.add('active');if(el)el.classList.add('active');else{const names=['res','pts','s11','layers','ref'];document.querySelectorAll('.sp-tab')[names.indexOf(name)]?.classList.add('active');}}
 function tlTab(name,el){document.querySelectorAll('#mod-tline .sp-tab').forEach(t=>t.classList.remove('active'));document.querySelectorAll('#mod-tline .sp-tc').forEach(t=>t.classList.remove('active'));document.getElementById(`tlt-${name}`).classList.add('active');el.classList.add('active');}
 function toggleL(k,el){layers[k]=!layers[k];el.classList.toggle('on',layers[k]);redrawMain();}
@@ -1114,13 +1074,9 @@ function qgamma(gr,gi){addPt(gr,gi,parseFloat(document.getElementById('inp-freq'
 function clearE(){document.getElementById('err').textContent='';document.getElementById('inp-a').classList.remove('err');}
 function er(msg){document.getElementById('err').textContent=msg;document.getElementById('inp-a').classList.add('err');}
 function s(id,val){const e=document.getElementById(id);if(e)e.textContent=val;}
-/* ═══════════════════════════════════════════════════════════════
-   EXPORT PNG
-═══════════════════════════════════════════════════════════════ */
 function exportPNG(){
   const src=document.getElementById('sc');
   if(!src){alert('No hay carta para exportar');return;}
-  /* Draw onto a white/dark bg offscreen canvas */
   const off=document.createElement('canvas');
   off.width=src.width;off.height=src.height;
   const octx=off.getContext('2d');
@@ -1131,10 +1087,6 @@ function exportPNG(){
   a.href=off.toDataURL('image/png');
   a.download='smith_chart.png';a.click();
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   EXPORT SVG  (serialize canvas as embedded PNG inside SVG)
-═══════════════════════════════════════════════════════════════ */
 function exportSVGfile(){
   const src=document.getElementById('sc');if(!src)return;
   const off=document.createElement('canvas');
@@ -1150,32 +1102,21 @@ function exportSVGfile(){
   a.href=URL.createObjectURL(blob);a.download='smith_chart.svg';a.click();
   setTimeout(()=>URL.revokeObjectURL(a.href),5000);
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   CONJUGATE MARKER
-═══════════════════════════════════════════════════════════════ */
 function markConjugate(){
   if(!points.length){alert('Primero ubica al menos un punto');return;}
   const last=points[points.length-1];
-  /* ZL* = conj(ZL) → same R, negate X → Γ* = conj(Γ) */
   const gr_c=last.g.r, gi_c=-last.g.i;
   const z=g2z(gr_c,gi_c);
   const rAbs=z.r*Z0, xAbs=z.i*Z0;
   const freq=last.freq||1000;
   addPt(gr_c,gi_c,freq);
-  /* Tag it visually */
   const idx=points.length-1;
   points[idx]._label='Z*';
   const info=`Conjugado de P${points.length-1}: ${rAbs.toFixed(1)}${xAbs>=0?'+':'-'}j${Math.abs(xAbs).toFixed(1)} Ω`;
   document.getElementById('st-pos').textContent=info;
   redrawMain();
 }
-
-/* ═══════════════════════════════════════════════════════════════
-   TOUCHSTONE PARSER & PLOTTER
-═══════════════════════════════════════════════════════════════ */
-let tsData=[];  /* [{fMHz, gr, gi, magDB, angDeg, vswr}] */
-
+let tsData=[]; 
 function onTsDrop(e){
   e.preventDefault();
   document.getElementById('drop-zone').classList.remove('drag-over');
@@ -1187,7 +1128,6 @@ function onTsFile(inp){
   if(file)parseTouchstone(file);
   inp.value='';
 }
-
 function parseTouchstone(file){
   const reader=new FileReader();
   reader.onload=e=>{
@@ -1200,7 +1140,6 @@ function parseTouchstone(file){
         if(!line||line.startsWith('!'))continue;
         if(line.startsWith('#')){
           const parts=line.toUpperCase().split(/\s+/);
-          /* # [HZ|KHZ|MHZ|GHZ] [S|Y|Z] [MA|DB|RI] R <val> */
           const fIdx=parts.findIndex(p=>['HZ','KHZ','MHZ','GHZ'].includes(p));
           if(fIdx>=0){const fu=parts[fIdx];freqScale=fu==='HZ'?1e-6:fu==='KHZ'?1e-3:fu==='GHZ'?1e3:1;}
           const fmtIdx=parts.findIndex(p=>['MA','DB','RI'].includes(p));
@@ -1215,7 +1154,7 @@ function parseTouchstone(file){
         let gr,gi;
         if(fmt==='RI'){gr=nums[1];gi=nums[2];}
         else if(fmt==='MA'){const mag=nums[1],ang=nums[2]*Math.PI/180;gr=mag*Math.cos(ang);gi=mag*Math.sin(ang);}
-        else{/* DB */const mag=Math.pow(10,nums[1]/20),ang=nums[2]*Math.PI/180;gr=mag*Math.cos(ang);gi=mag*Math.sin(ang);}
+        else{const mag=Math.pow(10,nums[1]/20),ang=nums[2]*Math.PI/180;gr=mag*Math.cos(ang);gi=mag*Math.sin(ang);}
         const mag=Math.hypot(gr,gi);
         const magDB=mag>1e-9?20*Math.log10(mag):-99.9;
         const angDeg=Math.atan2(gi,gr)*180/Math.PI;
@@ -1223,7 +1162,6 @@ function parseTouchstone(file){
         tsData.push({fMHz,gr,gi,mag,magDB,angDeg,vswr,refZ});
       }
       if(!tsData.length){alert('No se encontraron datos S11 en el archivo');return;}
-      /* Update Z0 if refZ different */
       if(tsData[0].refZ&&tsData[0].refZ!==Z0){
         document.getElementById('inp-z0').value=tsData[0].refZ;
         Z0=tsData[0].refZ;
@@ -1240,10 +1178,8 @@ function parseTouchstone(file){
   };
   reader.readAsText(file);
 }
-
 function renderTsTable(){
   const tbody=document.getElementById('ts-tbody');if(!tbody)return;
-  /* Show max 200 rows */
   const step=Math.max(1,Math.floor(tsData.length/200));
   tbody.innerHTML=tsData.filter((_,i)=>i%step===0).map((d,i)=>{
     const realIdx=i*step;
@@ -1257,27 +1193,21 @@ function renderTsTable(){
     </tr>`;
   }).join('');
 }
-
 function tsClickRow(idx){
   if(!tsData[idx])return;
   const d=tsData[idx];
   addPt(d.gr,d.gi,d.fMHz);
   spTab('res',null);
 }
-
 function tsPlotAll(){
   if(!tsData.length)return;
-  /* Thin to max 60 points for readability */
   const step=Math.max(1,Math.floor(tsData.length/60));
   tsData.filter((_,i)=>i%step===0).forEach(d=>addPt(d.gr,d.gi,d.fMHz));
   spTab('pts',null);
 }
-
 function tsClearPts(){
-  /* Remove points that came from Touchstone (heuristic: last batch) */
   points=[];selPt=-1;updatePtsList();redrawMain();
 }
-
 function tsExportCSV(){
   if(!tsData.length)return;
   let csv='Frec(MHz),S11_dB,Ang(deg),|Γ|,ROE,Gr,Gi\n';
@@ -1286,7 +1216,6 @@ function tsExportCSV(){
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);
   a.download='s11_data.csv';a.click();
 }
-
 function drawS11MiniChart(){
   const canv=document.getElementById('s11-canvas');if(!canv||!tsData.length)return;
   const pr=canv.parentElement.clientWidth-24;
@@ -1300,12 +1229,10 @@ function drawS11MiniChart(){
   ctx.clearRect(0,0,W,H);
   ctx.fillStyle=isDark?'#222220':'#f5f4f0';
   ctx.fillRect(0,0,W,H);
-  /* Compute RL values */
   const rls=tsData.map(d=>d.mag>1e-9?-20*Math.log10(d.mag):99);
   const minRL=0, maxRL=Math.max(40,Math.ceil(Math.max(...rls)/10)*10);
   const pad={l:8*dpr,r:6*dpr,t:6*dpr,b:16*dpr};
   const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
-  /* Grid line at -10dB, -20dB, -30dB */
   ctx.strokeStyle=isDark?'rgba(255,255,255,0.07)':'rgba(0,0,0,0.07)';
   ctx.lineWidth=dpr*0.5;
   [10,20,30].forEach(rl=>{
@@ -1317,7 +1244,6 @@ function drawS11MiniChart(){
     ctx.textAlign='right';
     ctx.fillText(`${rl}dB`,pad.l-2*dpr,y+3*dpr);
   });
-  /* Curve */
   ctx.beginPath();
   tsData.forEach((d,i)=>{
     const x=pad.l+cw*(i/(tsData.length-1));
@@ -1326,7 +1252,6 @@ function drawS11MiniChart(){
     i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
   });
   ctx.strokeStyle='#378add';ctx.lineWidth=1.5*dpr;ctx.stroke();
-  /* X axis labels */
   ctx.fillStyle=isDark?'rgba(255,255,255,0.4)':'rgba(0,0,0,0.4)';
   ctx.font=`${8*dpr}px var(--font-mono,monospace)`;
   ctx.textAlign='center';
@@ -1336,7 +1261,6 @@ function drawS11MiniChart(){
   ctx.fillText(fmtF((f0+f1)/2),pad.l+cw/2,H-4*dpr);
   ctx.fillText(fmtF(f1),pad.l+cw,H-4*dpr);
 }
-
 
 matchMedia('(prefers-color-scheme:dark)').addEventListener('change',e=>{isDark=e.matches;redrawMain();});
 window.addEventListener('resize',()=>{const active=document.querySelector('.module.active')?.id?.replace('mod-','');if(active){setTimeout(()=>{if(active==='main'){setupCanvas('sc');redrawMain();}else if(active==='match'){setupCanvas('sc2');drawSmith('sc2');}else if(active==='freq'){setupCanvas('sc3');if(sweepData.length)runSweep();}else if(active==='tline'){setupCanvas('sc4');drawSmith('sc4');}},50);}});

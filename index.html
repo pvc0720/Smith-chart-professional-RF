@@ -69,9 +69,9 @@ body{font-family:var(--font-sans);font-size:13px}
 .badge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--color-background-info);color:var(--color-text-info);font-weight:500}
 .module{display:none;flex-direction:column}
 .module.active{display:flex}
-.two-col{display:grid;grid-template-columns:1fr 220px;min-height:700px}
-.chart-wrap{position:relative;padding:6px;display:flex;align-items:stretch;justify-content:center;min-height:680px}
-canvas{display:block;cursor:crosshair;border-radius:6px;background:var(--color-background-secondary);width:100%;height:auto}
+.two-col{display:grid;grid-template-columns:1fr 210px;height:calc(100vh - 120px)}
+.chart-wrap{position:relative;padding:6px;display:flex;align-items:center;justify-content:center;overflow:hidden}
+#sc{display:block;cursor:crosshair;border-radius:6px;background:var(--color-background-secondary)}canvas:not(#sc){display:block;border-radius:6px;background:var(--color-background-secondary)}
 #tip{position:absolute;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:5px 9px;font-size:11px;pointer-events:none;display:none;z-index:10;max-width:160px}
 .side-panel{border-left:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow-y:auto;max-height:760px}
 .sp-tabs{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);flex-shrink:0}
@@ -524,58 +524,168 @@ let matchType='l';
 const COLS=['#1d9e75','#534ab7','#d85a30','#ba7517','#d4537e','#378add','#e24b4a','#3b6d11'];
 let ctxs={},dims={};
 
-/* ── ZOOM / PAN state (main chart 'sc' only) ── */
-let zoom={scale:1,tx:0,ty:0};
-const ZOOM_MIN=1,ZOOM_MAX=14;
-function resetZoom(){zoom={scale:1,tx:0,ty:0};updateZoomBadge();redrawMain();}
-function doZoom(factor,pivotX,pivotY){
-  const{cx,cy}=getD('sc');
-  const px=pivotX!==undefined?pivotX:cx;
-  const py=pivotY!==undefined?pivotY:cy;
-  const newScale=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoom.scale*factor));
-  const ratio=newScale/zoom.scale;
-  /* Correct zoom-to-cursor: tx' = tx*ratio + (px-cx)*(1-ratio)
-     Derivation: world point under cursor (px,py) must stay fixed.
-     gr = (px-cx-tx)/(R*s)  must equal  (px-cx-tx')/(R*s')
-     => tx' = tx*ratio + (px-cx)*(1-ratio) */
-  zoom.tx=zoom.tx*ratio+(px-cx)*(1-ratio);
-  zoom.ty=zoom.ty*ratio+(py-cy)*(1-ratio);
-  zoom.scale=newScale;
-  clampPan();updateZoomBadge();redrawMain();
-  const c=document.getElementById('sc');if(c)c.style.cursor=zoom.scale>1.05?'grab':'crosshair';
-}
-function clampPan(){const{W,H,cx,cy,R}=getD('sc');const mp=R*zoom.scale*0.98;zoom.tx=Math.max(-mp,Math.min(mp,zoom.tx));zoom.ty=Math.max(-mp,Math.min(mp,zoom.ty));}
-function updateZoomBadge(){const el=document.getElementById('zoom-badge');if(el)el.textContent=zoom.scale<1.05?'1×':`${zoom.scale.toFixed(1)}×`;}
+/* ══════════════════════════════════════════════════════════════════
+   ZOOM / PAN — Professional viewport approach
+   ══════════════════════════════════════════════════════════════════
+   The full Smith chart is always rendered at HIGH resolution (BASE_SZ)
+   onto an offscreen canvas with crisp lines and readable fonts.
+   Zoom/pan just crops and scales that image onto the visible canvas.
+   Result: zero distortion, perfect lines, fonts always sharp.
 
+   Viewport: a square region of the offscreen canvas defined by:
+     vp = { x, y, size }  — top-left + side length in OFFSCREEN pixels
+   At zoom=1: vp covers the full offscreen canvas.
+   At zoom>2: vp is a smaller crop centred on the pan target.
+   ══════════════════════════════════════════════════════════════════ */
+
+const BASE_SZ = 1400;   /* offscreen render resolution (px) */
+let offCanvas = null, offCtx = null;
+let vp = {x:0, y:0, size:BASE_SZ};   /* current viewport into offscreen */
+const ZOOM_MIN=1, ZOOM_MAX=14;
+
+function getScale(){ return BASE_SZ/vp.size; }
+
+function resetZoom(){
+  vp={x:0,y:0,size:BASE_SZ};
+  updateZoomBadge(); applyViewport();
+  const c=document.getElementById('sc');if(c)c.style.cursor='crosshair';
+}
+
+/* factor>1 = zoom in, factor<1 = zoom out
+   pivotCanvX/Y = canvas pixel under which the world point stays fixed */
+function doZoom(factor, pivotCanvX, pivotCanvY){
+  const vis=document.getElementById('sc');
+  const W=vis?vis.width:BASE_SZ;
+  /* default pivot = canvas centre */
+  const px = pivotCanvX!==undefined ? pivotCanvX : W/2;
+  const py = pivotCanvY!==undefined ? pivotCanvY : W/2;
+  /* Map canvas pixel to offscreen pixel */
+  const ox = vp.x + px*(vp.size/W);
+  const oy = vp.y + py*(vp.size/W);
+  /* New viewport size */
+  const newSize = Math.max(BASE_SZ/ZOOM_MAX, Math.min(BASE_SZ, vp.size/factor));
+  /* Keep (ox,oy) fixed: vp.x' = ox - px*(newSize/W) */
+  vp.x = ox - px*(newSize/W);
+  vp.y = oy - py*(newSize/W);
+  vp.size = newSize;
+  clampPan(); updateZoomBadge(); applyViewport();
+  if(vis) vis.style.cursor = vp.size<BASE_SZ*0.98 ? 'grab' : 'crosshair';
+}
+
+function clampPan(){
+  /* Don't pan beyond the offscreen bounds */
+  vp.x = Math.max(-(vp.size*0.5), Math.min(BASE_SZ-(vp.size*0.5), vp.x));
+  vp.y = Math.max(-(vp.size*0.5), Math.min(BASE_SZ-(vp.size*0.5), vp.y));
+}
+
+function updateZoomBadge(){
+  const el=document.getElementById('zoom-badge');
+  const s=BASE_SZ/vp.size;
+  if(el) el.textContent = s<1.05 ? '1×' : `${s.toFixed(1)}×`;
+}
+
+/* Convert visible-canvas pixel → gamma (for hit-testing/clicking) */
+function canvToGamma(px,py){
+  const vis=document.getElementById('sc');if(!vis)return{r:0,i:0};
+  const W=vis.width;
+  /* Map to offscreen pixel */
+  const ox=vp.x+px*(vp.size/W);
+  const oy=vp.y+py*(vp.size/W);
+  /* Map to gamma (offscreen centre is BASE_SZ/2, radius is BASE_SZ*0.44) */
+  const R_off=BASE_SZ*0.44;
+  const cx_off=BASE_SZ/2, cy_off=BASE_SZ/2;
+  return{r:(ox-cx_off)/R_off, i:(cy_off-oy)/R_off};
+}
+/* Convert gamma → visible-canvas pixel */
+function gammaToCanv(gr,gi){
+  const vis=document.getElementById('sc');if(!vis)return{x:0,y:0};
+  const W=vis.width;
+  const R_off=BASE_SZ*0.44;
+  const cx_off=BASE_SZ/2, cy_off=BASE_SZ/2;
+  /* Offscreen pixel */
+  const ox=cx_off+gr*R_off;
+  const oy=cy_off-gi*R_off;
+  /* Map to canvas pixel */
+  return{x:(ox-vp.x)/(vp.size/W), y:(oy-vp.y)/(vp.size/W)};
+}
+/* Is a canvas pixel inside the Smith circle? */
+function insideChart(px,py){
+  const g=canvToGamma(px,py);
+  return Math.hypot(g.r,g.i)<=1.02;
+}
+
+/* Blit the offscreen viewport onto the visible canvas */
+function applyViewport(){
+  const vis=document.getElementById('sc');if(!vis||!offCanvas)return;
+  const ctx=vis.getContext('2d');
+  ctx.clearRect(0,0,vis.width,vis.height);
+  ctx.drawImage(offCanvas, vp.x,vp.y,vp.size,vp.size, 0,0,vis.width,vis.height);
+  /* Draw points on top (screen space, no offscreen needed) */
+  drawPointsOnVis(ctx, vis.width);
+}
+
+/* ── OFFSCREEN canvas (full-quality Smith chart render) ── */
+function initOffscreen(){
+  offCanvas=document.createElement('canvas');
+  offCanvas.width=BASE_SZ;offCanvas.height=BASE_SZ;
+  offCtx=offCanvas.getContext('2d');
+}
+/* ── VISIBLE canvas (just the viewport crop) ── */
 function setupCanvas(id){
   const c=document.getElementById(id);if(!c)return;
+  if(id==='sc'){
+    /* Main chart: fill the container — use its actual available space */
+    const wrap=c.parentElement;
+    const avail=Math.min(wrap.clientWidth-12,wrap.clientHeight-12,820);
+    const s=Math.max(300,avail);
+    c.width=s;c.height=s;
+    c.style.width=s+'px';c.style.height=s+'px';
+    if(!offCanvas)initOffscreen();
+    return c.getContext('2d');
+  }
+  /* Other canvases (matching, sweep, tline) — classic approach */
   const wrap=c.parentElement;
-  const s=Math.min(wrap.clientWidth-12,window.innerHeight-160,800);
+  const s=Math.min(wrap.clientWidth-20,wrap.clientHeight||520,520);
   c.width=s;c.height=s;
-  dims[id]={W:s,H:s,cx:s/2,cy:s/2,R:s*0.44};
+  dims[id]={W:s,H:s,cx:s/2,cy:s/2,R:s*0.43};
   ctxs[id]=c.getContext('2d');
   return ctxs[id];
 }
-function getD(id){return dims[id]||{W:400,H:400,cx:200,cy:200,R:172};}
+function getD(id){
+  if(id==='sc'){
+    const el=document.getElementById('sc');
+    const W=el?el.width:700,H=el?el.height:700;
+    return{W,H,cx:W/2,cy:H/2,R:Math.min(W,H)*0.44};
+  }
+  return dims[id]||{W:400,H:400,cx:200,cy:200,R:172};
+}
 function z2g(rn,xn){const d=(rn+1)**2+xn**2;if(d<1e-12)return{r:1,i:0};return{r:((rn**2+xn**2)-1)/d,i:(2*xn)/d};}
 function g2z(gr,gi){const d=(1-gr)**2+gi**2;if(d<1e-9)return{r:1e9,x:0};return{r:(1-gr**2-gi**2)/d,i:(2*gi)/d};}
-/* g2c / c2g account for zoom+pan on main chart */
+/* Gamma → offscreen canvas pixel (fixed coords, no zoom) */
+function g2off(gr,gi){const R=BASE_SZ*0.44,cx=BASE_SZ/2,cy=BASE_SZ/2;return{x:cx+gr*R,y:cy-gi*R};}
+/* Offscreen pixel → visible canvas pixel */
+function off2vis(ox,oy){
+  const vis=document.getElementById('sc');if(!vis)return{x:ox,y:oy};
+  const W=vis.width,scale=vp.size/W;
+  return{x:(ox-vp.x)/scale,y:(oy-vp.y)/scale};
+}
+/* Offscreen radius → visible canvas radius */
+function offR2vis(or){
+  const vis=document.getElementById('sc');if(!vis)return or;
+  return or/(vp.size/vis.width);
+}
+/* Gamma → visible canvas pixel (accounts for viewport) */
 function g2c(id,gr,gi){
-  const{cx,cy,R}=getD(id);
-  const bx=cx+gr*R,by=cy-gi*R;
-  if(id!=='sc')return{x:bx,y:by};
-  return{x:(bx-cx)*zoom.scale+cx+zoom.tx,y:(by-cy)*zoom.scale+cy+zoom.ty};
+  if(id==='sc'){const p=g2off(gr,gi);return gammaToCanv(gr,gi);}
+  const{cx,cy,R}=getD(id);return{x:cx+gr*R,y:cy-gi*R};
 }
 function c2g(id,px,py){
-  const{cx,cy,R}=getD(id);
-  if(id!=='sc')return{r:(px-cx)/R,i:(cy-py)/R};
-  const ux=(px-cx-zoom.tx)/zoom.scale+cx;
-  const uy=(py-cy-zoom.ty)/zoom.scale+cy;
-  return{r:(ux-cx)/R,i:(cy-uy)/R};
+  if(id==='sc')return canvToGamma(px,py);
+  const{cx,cy,R}=getD(id);return{r:(px-cx)/R,i:(cy-py)/R};
 }
 function inside(id,px,py){
-  if(id!=='sc'){const{cx,cy,R}=getD(id);return Math.hypot(px-cx,py-cy)<=R+2;}
-  const g=c2g(id,px,py);return Math.hypot(g.r,g.i)<=1.02;
+  if(id==='sc')return insideChart(px,py);
+  const{cx,cy,R}=getD(id);return Math.hypot(px-cx,py-cy)<=R+2;
 }
 function f(n,d=3){if(!isFinite(n)||Math.abs(n)>99999)return'∞';return(+n).toFixed(d);}
 function fz(r,x){const xs=x>=0?`+j${f(x,2)}`:`−j${f(Math.abs(x),2)}`;return`${f(r,2)}${xs}`;}
@@ -601,90 +711,188 @@ function getC(){
     ang:isDark?'rgba(255,255,255,0.08)':'rgba(0,0,0,0.07)',
   };
 }
-function drawSmith(cid,extraFn){
-  const ctx=ctxs[cid];if(!ctx)return;
-  const{W,H,cx,cy,R}=getD(cid);const c=getC();
-  /* Zoom factors: s=zoom.scale, tx/ty = zoom.tx/ty (only for main chart) */
-  const s=cid==='sc'?zoom.scale:1;
-  const tx=cid==='sc'?zoom.tx:0;
-  const ty=cid==='sc'?zoom.ty:0;
-  /* Convert world (wx,wy) and world-radius wr to zoomed canvas coords */
-  const zx=(wx)=>(wx-cx)*s+cx+tx;
-  const zy=(wy)=>(wy-cy)*s+cy+ty;
-  const zr=(wr)=>wr*s;
-  /* Base font size: 12px at zoom=1, scales up with zoom */
-  const fs=Math.max(12,Math.min(20,12*s));
+/* ══════════════════════════════════════════════════════════════════
+   DRAW SMITH CHART onto OFFSCREEN canvas (id==='sc') or visible (others)
+   Font: 16px — large enough to read without squinting.
+   Lines: 1.0-1.5px — crisp on the 1400px surface.
+   ══════════════════════════════════════════════════════════════════ */
+function drawSmith(cid, extraFn){
+  /* For main chart, draw onto offscreen; for others, use their own ctx */
+  const isMain=(cid==='sc');
+  const ctx = isMain ? offCtx : ctxs[cid];
+  if(!ctx)return;
+  const{W,H,cx,cy,R}=getD(cid);
+  const c=getC();
+  const FNT=isMain?16:11; /* px — fixed size, always crisp */
+
   ctx.clearRect(0,0,W,H);
-  /* ── Background fill inside chart boundary ── */
-  ctx.beginPath();ctx.arc(zx(cx),zy(cy),zr(R),0,PI*2);ctx.fillStyle=c.bg;ctx.fill();
-  /* ── Angle lines ── */
+
+  /* ── Background fill ── */
+  /* Helper: just an alias for ctx.arc — world coords are correct on both
+     offscreen (main) and direct (other charts). */
+  function arc(wcx,wcy,wr){ctx.arc(wcx,wcy,wr,0,PI*2);}
+  ctx.beginPath();arc(cx,cy,R);ctx.fillStyle=c.bg;ctx.fill();
+
+  /* ── Angle guide lines ── */
   if(layers.ang){[30,60,90,120,150,180].forEach(a=>{
     const rad=a*PI/180;
     ctx.beginPath();
-    ctx.moveTo(zx(cx),zy(cy));ctx.lineTo(zx(cx+R*Math.cos(-rad)),zy(cy+R*Math.sin(-rad)));
-    ctx.moveTo(zx(cx),zy(cy));ctx.lineTo(zx(cx+R*Math.cos(rad)),zy(cy+R*Math.sin(rad)));
-    ctx.strokeStyle=c.ang;ctx.lineWidth=0.5*s;ctx.stroke();
+    ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(-rad),cy+R*Math.sin(-rad));
+    ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(rad), cy+R*Math.sin(rad));
+    ctx.strokeStyle=c.ang;ctx.lineWidth=0.5;ctx.stroke();
   });}
-  /* ── R=const circles ── */
+
+  /* ── R = const circles ── */
   if(layers.r){[0,0.2,0.5,1,2,5].forEach(rn=>{
     const cr=R/(1+rn),wcx=cx+R-cr;
-    ctx.beginPath();ctx.arc(zx(wcx),zy(cy),zr(cr),0,PI*2);
-    ctx.strokeStyle=c.rC;ctx.lineWidth=rn===1?1.5:0.8;ctx.setLineDash([]);ctx.stroke();
+    ctx.beginPath();ctx.arc(wcx,cy,cr,0,PI*2);
+    ctx.strokeStyle=c.rC;ctx.lineWidth=rn===1?1.8:1.0;ctx.setLineDash([]);ctx.stroke();
   });}
-  /* ── X=const arcs (clip to main circle) ── */
+
+  /* ── X = const arcs ── */
   if(layers.x){
     [0.2,0.5,1,2,5].forEach(xn=>{[1,-1].forEach(sg=>{
       const rx=R/xn,wcy2=cy-sg*(R+rx);
       ctx.save();
-      ctx.beginPath();ctx.arc(zx(cx),zy(cy),zr(R),0,PI*2);ctx.clip();
-      ctx.beginPath();ctx.arc(zx(cx+R),zy(wcy2),zr(rx),0,PI*2);
-      ctx.strokeStyle=c.xC;ctx.lineWidth=xn===1?1.1:0.7;ctx.stroke();
+      ctx.beginPath();ctx.arc(cx,cy,R,0,PI*2);ctx.clip();
+      ctx.beginPath();ctx.arc(cx+R,wcy2,rx,0,PI*2);
+      ctx.strokeStyle=c.xC;ctx.lineWidth=xn===1?1.4:0.9;ctx.stroke();
       ctx.restore();
     });});
-    ctx.strokeStyle=c.ang;ctx.lineWidth=0.7;ctx.setLineDash([4,3]);
-    ctx.beginPath();ctx.moveTo(zx(cx-R),zy(cy));ctx.lineTo(zx(cx+R),zy(cy));ctx.stroke();
+    /* Real axis dashed line */
+    ctx.strokeStyle=c.ang;ctx.lineWidth=0.8;ctx.setLineDash([6,4]);
+    ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.stroke();
     ctx.setLineDash([]);
   }
+
   /* ── Admittance circles ── */
   if(layers.adm){[0,0.2,0.5,1,2,5].forEach(rn=>{
     const cr=R/(1+rn),wcx=cx-R+cr;
-    ctx.beginPath();ctx.arc(zx(wcx),zy(cy),zr(cr),0,PI*2);
-    ctx.strokeStyle=c.admC;ctx.lineWidth=0.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(wcx,cy,cr,0,PI*2);
+    ctx.strokeStyle=c.admC;ctx.lineWidth=0.7;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);
   });}
+
   /* ── SWR circle ── */
   if(layers.swr&&swrVal>1.001){
     const gm=(swrVal-1)/(swrVal+1);
-    ctx.beginPath();ctx.arc(zx(cx),zy(cy),zr(gm*R),0,PI*2);
-    ctx.strokeStyle=c.swr;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);ctx.stroke();ctx.setLineDash([]);
+    ctx.beginPath();ctx.arc(cx,cy,gm*R,0,PI*2);
+    ctx.strokeStyle=c.swr;ctx.lineWidth=1.8;ctx.setLineDash([8,4]);ctx.stroke();ctx.setLineDash([]);
     if(layers.lbl){
-      const lp=g2c(cid,0,-gm);
-      ctx.fillStyle=c.swr;ctx.font=`500 ${fs}px var(--font-sans,sans-serif)`;
-      ctx.textAlign='center';ctx.fillText(`ROE ${parseFloat(swrVal).toFixed(1)}`,lp.x,lp.y-5);
+      const lx=cx, ly=cy-gm*R-8;
+      ctx.fillStyle=c.swr;ctx.font=`500 ${FNT}px var(--font-sans,sans-serif)`;
+      ctx.textAlign='center';ctx.fillText(`ROE ${parseFloat(swrVal).toFixed(1)}`,lx,ly);
     }
   }
-  /* ── Boundary circle ── */
-  ctx.beginPath();ctx.arc(zx(cx),zy(cy),zr(R),0,PI*2);ctx.strokeStyle=c.bnd;ctx.lineWidth=2.0;ctx.stroke();
+
+  /* ── Outer boundary ── */
+  ctx.beginPath();ctx.arc(cx,cy,R,0,PI*2);ctx.strokeStyle=c.bnd;ctx.lineWidth=2.2;ctx.stroke();
+
   /* ── Labels ── */
   if(layers.lbl){
-    ctx.font=`400 ${fs}px var(--font-sans,sans-serif)`;ctx.fillStyle=c.fg2;
+    ctx.font=`400 ${FNT}px var(--font-sans,sans-serif)`;ctx.fillStyle=c.fg2;
+    /* R-axis values */
     [0,0.2,0.5,1,2,5].forEach(rn=>{
-      const p=g2c(cid,z2g(rn,0).r,0);
-      ctx.textAlign='center';ctx.fillText(rn===0?'0':rn.toString(),p.x,p.y+fs+4);
+      const bx=cx+z2g(rn,0).r*R, by=cy;
+      ctx.textAlign='center';ctx.fillText(rn===0?'0':rn.toString(),bx,by+FNT+6);
     });
+    /* X labels */
     [0.5,1,2].forEach(xn=>{[1,-1].forEach(sg=>{
-      const g=z2g(0,xn*sg),p=g2c(cid,g.r,g.i);
-      ctx.textAlign='left';ctx.fillText(`${sg>0?'+':'−'}j${xn}`,p.x+5,p.y+4);
+      const g=z2g(0,xn*sg);
+      const bx=cx+g.r*R, by=cy-g.i*R;
+      ctx.textAlign='left';ctx.fillText(`${sg>0?'+':'−'}j${xn}`,bx+6,by+5);
     });});
-    ctx.fillStyle=c.fg;ctx.font=`500 ${fs}px var(--font-sans,sans-serif)`;
-    ctx.textAlign='center';
-    const axisLbl=g2c(cid,0,0);
-    ctx.fillText('R/Z₀',axisLbl.x,axisLbl.y+fs*2+4);
+    /* Axis title */
+    ctx.fillStyle=c.fg;ctx.font=`500 ${FNT}px var(--font-sans,sans-serif)`;
+    ctx.textAlign='center';ctx.fillText('R/Z₀',cx,cy+FNT*2+8);
   }
-  if(layers.sp){drawDot(cid,'#ba7517',z2g(0,0),'Z₀',c);drawDot(cid,'#e24b4a',{r:-0.998,i:0},'CC',c);drawDot(cid,'#378add',{r:0.998,i:0},'CA',c);}
+
+  /* ── Special points ── */
+  if(layers.sp){
+    drawDotOff(ctx,cid,'#ba7517',z2g(0,0),'Z₀',c,FNT);
+    drawDotOff(ctx,cid,'#e24b4a',{r:-0.998,i:0},'CC',c,FNT);
+    drawDotOff(ctx,cid,'#378add',{r:0.998,i:0},'CA',c,FNT);
+  }
+
   if(extraFn)extraFn(ctx,getD(cid),c);
+
+  /* For main chart: blit offscreen to visible canvas */
+  if(isMain)applyViewport();
 }
-function drawDot(cid,col,g,lbl,c){const ctx=ctxs[cid];const p=g2c(cid,g.r,g.i);const zs2=cid==='sc'?zoom.scale:1;const fs=Math.max(12,Math.min(18,12*zs2));const dr=Math.max(5,5*Math.min(zs2,2));ctx.beginPath();ctx.arc(p.x,p.y,dr,0,PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=1.5;ctx.stroke();if(layers.lbl){ctx.fillStyle=c.fg2;ctx.font=`400 ${fs}px var(--font-sans,sans-serif)`;ctx.textAlign='center';ctx.fillText(lbl,p.x,p.y-dr-4);}}
-function drawPoints(cid){const ctx=ctxs[cid];if(!ctx)return;const{cx,cy,R}=getD(cid);const c=getC();points.forEach((pt,i)=>{const col=COLS[i%COLS.length];const p=g2c(cid,pt.g.r,pt.g.i);if(i===selPt||i===points.length-1){const gm=Math.hypot(pt.g.r,pt.g.i);if(gm>0.01){ctx.beginPath();ctx.arc(cx,cy,gm*R,0,PI*2);ctx.strokeStyle=col+'55';ctx.lineWidth=0.8;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);}}ctx.beginPath();ctx.arc(p.x,p.y,7,0,PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=1.5;ctx.stroke();if(layers.lbl){const fsP=Math.max(12,Math.min(18,12*zoom.scale));ctx.fillStyle=col;ctx.font=`500 ${fsP}px var(--font-sans,sans-serif)`;ctx.textAlign='left';/* Use Z* label if tagged, otherwise P# */const lbl=pt._label?`Z*(P${i})`:pt._tsLabel?pt._tsLabel:`P${i+1}`;ctx.fillText(lbl,p.x+8+2*(zoom.scale-1),p.y-2-2*(zoom.scale-1));}/* Z* ring */if(pt._label==='Z*'){ctx.beginPath();ctx.arc(p.x,p.y,8,0,PI*2);ctx.strokeStyle='#d85a30';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);}});}
+
+/* Draw a special dot onto offscreen (world coords) */
+function drawDotOff(ctx,cid,col,g,lbl,c,fnt){
+  const{cx,cy,R}=getD(cid);
+  const px=cx+g.r*R, py=cy-g.i*R;
+  const DR=7;
+  ctx.beginPath();ctx.arc(px,py,DR,0,PI*2);ctx.fillStyle=col;ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,0.85)';ctx.lineWidth=1.8;ctx.stroke();
+  if(layers.lbl){
+    ctx.fillStyle=c.fg2;ctx.font=`400 ${fnt}px var(--font-sans,sans-serif)`;
+    ctx.textAlign='center';ctx.fillText(lbl,px,py-DR-4);
+  }
+}
+
+/* Draw user points on TOP of the visible canvas (screen space, after viewport blit) */
+function drawPointsOnVis(ctx, visW){
+  if(!points.length)return;
+  const c=getC();
+  const scale_f=visW/vp.size; /* offscreen-to-canvas scale factor */
+  points.forEach((pt,i)=>{
+    const col=COLS[i%COLS.length];
+    /* Position in visible canvas pixels */
+    const p=gammaToCanv(pt.g.r,pt.g.i);
+    /* Clip off-screen points */
+    if(p.x<-20||p.x>visW+20||p.y<-20||p.y>visW+20)return;
+    /* SWR ring for active point */
+    if(i===selPt||i===points.length-1){
+      const gm=Math.hypot(pt.g.r,pt.g.i);
+      if(gm>0.01){
+        /* radius in visible pixels: gm * R_off * scale_f */
+        const rvis=gm*BASE_SZ*0.44*scale_f;
+        const pc=gammaToCanv(0,0); /* chart centre in visible pixels */
+        ctx.beginPath();ctx.arc(pc.x,pc.y,rvis,0,PI*2);
+        ctx.strokeStyle=col+'66';ctx.lineWidth=1.2;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);
+      }
+    }
+    /* Dot */
+    const DR=8;
+    ctx.beginPath();ctx.arc(p.x,p.y,DR,0,PI*2);ctx.fillStyle=col;ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.9)';ctx.lineWidth=2;ctx.stroke();
+    /* Label */
+    if(layers.lbl){
+      const lbl=pt._label?`Z*(P${i+1})`:pt._tsLabel||`P${i+1}`;
+      ctx.fillStyle=col;ctx.font='600 13px var(--font-sans,sans-serif)';
+      ctx.textAlign='left';ctx.fillText(lbl,p.x+DR+2,p.y-3);
+    }
+    /* Z* ring */
+    if(pt._label==='Z*'){
+      ctx.beginPath();ctx.arc(p.x,p.y,DR+4,0,PI*2);
+      ctx.strokeStyle='#d85a30';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);
+    }
+  });
+}
+
+/* Legacy drawPoints for non-main charts */
+function drawPoints(cid){
+  if(cid==='sc'){
+    /* For main chart, points are drawn in applyViewport via drawPointsOnVis */
+    return;
+  }
+  const ctx=ctxs[cid];if(!ctx)return;
+  const{cx,cy,R,W,H}=getD(cid);const c=getC();
+  points.forEach((pt,i)=>{
+    const col=COLS[i%COLS.length];
+    const bx=cx+pt.g.r*R,by=cy-pt.g.i*R;
+    const DR=6;
+    ctx.beginPath();ctx.arc(bx,by,DR,0,PI*2);ctx.fillStyle=col;ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=1.5;ctx.stroke();
+    if(layers.lbl){
+      const lbl=pt._label?`Z*`:pt._tsLabel||`P${i+1}`;
+      ctx.fillStyle=col;ctx.font='500 10px var(--font-sans,sans-serif)';
+      ctx.textAlign='left';ctx.fillText(lbl,bx+DR+2,by-2);
+    }
+  });
+}
 function onModeChange(){const m=document.getElementById('inp-mode').value;const la=document.getElementById('lbl-a'),lb=document.getElementById('lbl-b');const gb=document.getElementById('grp-b');const a=document.getElementById('inp-a'),b=document.getElementById('inp-b');if(m==='z'){la.textContent='R (Ω)';lb.textContent='X (Ω)';gb.style.display='';a.value=75;b.value=25;}else if(m==='y'){la.textContent='G (mS)';lb.textContent='B (mS)';gb.style.display='';a.value=10;b.value=5;}else if(m==='gamma'){la.textContent='Γ real (a)';lb.textContent='Γ imag (b)';gb.style.display='';a.value=0.2;b.value=0.3;}else if(m==='rl'){la.textContent='RL (dB)';gb.style.display='none';a.value=15;}else if(m==='vswr'){la.textContent='VSWR';gb.style.display='none';a.value=2;}clearE();}
 function plotMain(){const m=document.getElementById('inp-mode').value;const av=parseFloat(document.getElementById('inp-a').value);const bv=parseFloat(document.getElementById('inp-b').value)||0;let gr,gi;clearE();if(m==='z'){if(isNaN(av)||av<0)return er('R ≥ 0');if(isNaN(bv))return er('X inválido');const g=z2g(av/Z0,bv/Z0);gr=g.r;gi=g.i;}else if(m==='y'){if(isNaN(av)||av<0)return er('G ≥ 0 mS');const Zmag=av*av*1e-6+(bv||0)*(bv||0)*1e-6;if(Zmag<1e-20)return er('Admitancia = 0: circuito abierto');const Zr=av*1e-3/((av*av+bv*bv)*1e-6),Zi=-(bv||0)*1e-3/((av*av+bv*bv)*1e-6);const g=z2g(Zr/Z0,Zi/Z0);gr=g.r;gi=g.i;}else if(m==='gamma'){if(isNaN(av)||isNaN(bv))return er('Valores inválidos');if(Math.hypot(av,bv)>1.001)return er('|Γ| debe ser ≤ 1');gr=av;gi=bv;}else if(m==='rl'){if(isNaN(av)||av<0)return er('RL ≥ 0 dB');gr=Math.pow(10,-av/20);gi=0;}else if(m==='vswr'){if(isNaN(av)||av<1)return er('VSWR ≥ 1');gr=(av-1)/(av+1);gi=0;}if(!isFinite(gr)||!isFinite(gi))return er('Resultado no finito');const mag=Math.hypot(gr,gi);if(mag>1){gr/=mag;gi/=mag;}const freq=parseFloat(document.getElementById('inp-freq').value)||1000;if(freq<=0)return er('Frecuencia > 0');addPt(gr,gi,freq);}
 function addPt(gr,gi,freq){const p=calcParams(gr,gi);p.freq=freq;points.push({g:{r:gr,i:gi},p,freq});selPt=points.length-1;swrVal=Math.min(p.vswr,10);document.getElementById('swr-sl').value=swrVal;document.getElementById('swr-v').textContent=f(swrVal,2);showRes(p,freq);updatePtsList();redrawMain();}
@@ -694,9 +902,17 @@ function selectPt(i){selPt=i;const pt=points[i];showRes(pt.p,pt.freq);updatePtsL
 function removePt(i){points.splice(i,1);if(selPt>=points.length)selPt=points.length-1;updatePtsList();redrawMain();}
 function clearAll(){points=[];selPt=-1;updatePtsList();redrawMain();['r-z','r-zn','r-r','r-x','r-y','r-g','r-b','r-gc','r-gm','r-ga','r-vswr','r-rl','r-ml','r-pr','r-pt','r-feq','r-lc','r-cc','r-q','r-zone','r-type','r-match'].forEach(id=>{const e=document.getElementById(id);if(e){e.textContent='—';e.className='mv';}});}
 function exportCSV(){if(!points.length)return;let csv='P,R(Ω),X(Ω),|Γ|,∠Γ(°),VSWR,RL(dB),Pr(%),Pt(%)\n';points.forEach((pt,i)=>{const p=pt.p;csv+=`P${i+1},${f(p.rAbs,3)},${f(p.xAbs,3)},${f(p.mag,5)},${f(p.ang,2)},${f(p.vswr,3)},${f(p.rl,3)},${f(p.pr,3)},${f(p.pt,3)}\n`;});const a=document.createElement('a');a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(csv);a.download='smith_points.csv';a.click();}
-function redrawMain(){drawSmith('sc',(_ctx,_d,_c)=>{});drawPoints('sc');}
+function redrawMain(){
+  if(!offCanvas)initOffscreen();
+  drawSmith('sc',(_ctx,_d,_c)=>{});
+  /* drawSmith already calls applyViewport() which blits + drawPointsOnVis */
+}
 let hoverG=null,isPanning=false,panStart={x:0,y:0},panOrigin={tx:0,ty:0},didPan=false;
-function getCanvasXY(c,e){const r=c.getBoundingClientRect();const sx=c.width/r.width,sy=c.height/r.height;return{px:(e.clientX-r.left)*sx,py:(e.clientY-r.top)*sy};}
+function getCanvasXY(c,e){
+  const r=c.getBoundingClientRect();
+  const sx=c.width/r.width,sy=c.height/r.height;
+  return{px:(e.clientX-r.left)*sx,py:(e.clientY-r.top)*sy};
+}
 function setupMainEvents(){
   const c=document.getElementById('sc');if(!c)return;
   const tip=document.getElementById('tip');
@@ -717,7 +933,7 @@ function setupMainEvents(){
     if(e.touches.length===2){
       e.preventDefault();
       const dist=Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY);
-      if(lastDist>0){const factor=dist/lastDist;zoom.scale=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoom.scale*factor));clampPan();updateZoomBadge();redrawMain();}
+      if(lastDist>0){doZoom(dist/lastDist,undefined,undefined);}
       lastDist=dist;
     }
   },{passive:false});
@@ -727,7 +943,7 @@ function setupMainEvents(){
     if(e.button!==0)return;
     const{px,py}=getCanvasXY(c,e);
     isPanning=true;didPan=false;
-    panStart={x:px,y:py};panOrigin={tx:zoom.tx,ty:zoom.ty};
+    panStart={x:px,y:py};panOrigin={x:vp.x,y:vp.y};
     c.style.cursor='grabbing';
   });
   window.addEventListener('mousemove',e=>{
@@ -735,8 +951,10 @@ function setupMainEvents(){
     const{px,py}=getCanvasXY(c,e);
     const dx=px-panStart.x,dy=py-panStart.y;
     if(Math.hypot(dx,dy)>3)didPan=true;
-    if(didPan&&zoom.scale>1.05){
-      zoom.tx=panOrigin.tx+dx;zoom.ty=panOrigin.ty+dy;
+    if(didPan&&vp.size<BASE_SZ*0.98){
+      const scale=vp.size/document.getElementById('sc').width;
+      vp.x=panOrigin.x-dx*scale;
+      vp.y=panOrigin.y-dy*scale;
       clampPan();redrawMain();
     }
     /* tooltip on hover */
@@ -753,10 +971,10 @@ function setupMainEvents(){
         }
       }else{hoverG=null;tip.style.display='none';}
       redrawMain();
-      if(hoverG){const g=hoverG,ctx=ctxs['sc'];const p=g2c('sc',g.r,g.i);ctx.beginPath();ctx.arc(p.x,p.y,5,0,PI*2);ctx.fillStyle='rgba(29,158,117,0.25)';ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,3,0,PI*2);ctx.fillStyle='#1d9e75';ctx.fill();}
+      if(hoverG){const vis2=document.getElementById('sc');if(vis2){const ctx2=vis2.getContext('2d');const p=gammaToCanv(hoverG.r,hoverG.i);ctx2.beginPath();ctx2.arc(p.x,p.y,6,0,PI*2);ctx2.fillStyle='rgba(29,158,117,0.2)';ctx2.fill();ctx2.beginPath();ctx2.arc(p.x,p.y,4,0,PI*2);ctx2.fillStyle='#1d9e75';ctx2.fill();}}
     }
   });
-  window.addEventListener('mouseup',()=>{isPanning=false;c.style.cursor=zoom.scale>1.05?'grab':'crosshair';});
+  window.addEventListener('mouseup',()=>{isPanning=false;const cv=document.getElementById('sc');if(cv)cv.style.cursor=vp.size<BASE_SZ*0.98?'grab':'crosshair';});
 
   /* ── MOUSEMOVE when not dragging (for tooltip) ── */
   c.addEventListener('mousemove',e=>{
@@ -774,7 +992,14 @@ function setupMainEvents(){
       }else{hoverG=null;tip.style.display='none';}
     }else{hoverG=null;tip.style.display='none';}
     redrawMain();
-    if(hoverG){const g=hoverG,ctx=ctxs['sc'];const p=g2c('sc',g.r,g.i);ctx.beginPath();ctx.arc(p.x,p.y,5,0,PI*2);ctx.fillStyle='rgba(29,158,117,0.25)';ctx.fill();ctx.beginPath();ctx.arc(p.x,p.y,3,0,PI*2);ctx.fillStyle='#1d9e75';ctx.fill();}
+    if(hoverG){
+      const vis=document.getElementById('sc');if(vis){
+        const ctx2=vis.getContext('2d');
+        const p=gammaToCanv(hoverG.r,hoverG.i);
+        ctx2.beginPath();ctx2.arc(p.x,p.y,6,0,PI*2);ctx2.fillStyle='rgba(29,158,117,0.2)';ctx2.fill();
+        ctx2.beginPath();ctx2.arc(p.x,p.y,4,0,PI*2);ctx2.fillStyle='#1d9e75';ctx2.fill();
+      }
+    }
   });
   c.addEventListener('mouseleave',()=>{hoverG=null;tip.style.display='none';if(!isPanning)redrawMain();});
 
@@ -793,7 +1018,7 @@ function setupMainEvents(){
   });
 
   /* ── DOUBLE-CLICK reset zoom ── */
-  c.addEventListener('dblclick',e=>{resetZoom();});
+  c.addEventListener('dblclick',e=>{e.preventDefault();resetZoom();});
 }
 function setMT(t,el){matchType=t;document.querySelectorAll('.stag').forEach(e=>e.classList.remove('on'));el.classList.add('on');}
 function calcMatch(){const RL=parseFloat(document.getElementById('m-rl').value);const XL=parseFloat(document.getElementById('m-xl').value);const Z0m=parseFloat(document.getElementById('m-z0').value)||50;const fMHz=parseFloat(document.getElementById('m-freq').value)||1000;const omega=2*PI*fMHz*1e6;const gl=z2g(RL/Z0m,XL/Z0m);let e1='—',e2='—',bw='—',qv='—',rlAfter='—',top='—',desc='';

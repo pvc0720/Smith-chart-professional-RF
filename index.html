@@ -69,11 +69,11 @@ body{font-family:var(--font-sans);font-size:13px}
 .badge{font-size:10px;padding:2px 7px;border-radius:20px;background:var(--color-background-info);color:var(--color-text-info);font-weight:500}
 .module{display:none;flex-direction:column}
 .module.active{display:flex}
-.two-col{display:grid;grid-template-columns:1fr 240px;min-height:520px}
-.chart-wrap{position:relative;padding:10px;display:flex;align-items:center;justify-content:center}
-canvas{display:block;cursor:crosshair;border-radius:6px;background:var(--color-background-secondary)}
+.two-col{display:grid;grid-template-columns:1fr 220px;min-height:700px}
+.chart-wrap{position:relative;padding:6px;display:flex;align-items:stretch;justify-content:center;min-height:680px}
+canvas{display:block;cursor:crosshair;border-radius:6px;background:var(--color-background-secondary);width:100%;height:auto}
 #tip{position:absolute;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:6px;padding:5px 9px;font-size:11px;pointer-events:none;display:none;z-index:10;max-width:160px}
-.side-panel{border-left:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow-y:auto;max-height:580px}
+.side-panel{border-left:0.5px solid var(--color-border-tertiary);display:flex;flex-direction:column;overflow-y:auto;max-height:760px}
 .sp-tabs{display:flex;border-bottom:0.5px solid var(--color-border-tertiary);flex-shrink:0}
 .sp-tab{flex:1;text-align:center;font-size:10px;padding:6px 2px;cursor:pointer;color:var(--color-text-secondary);border-bottom:2px solid transparent;margin-bottom:-0.5px;white-space:nowrap}
 .sp-tab.active{color:var(--color-text-info);border-bottom-color:var(--color-text-info)}
@@ -197,10 +197,10 @@ canvas{display:block;cursor:crosshair;border-radius:6px;background:var(--color-b
       <div id="tip"></div>
       <!-- Zoom controls -->
       <div style="position:absolute;bottom:14px;right:14px;display:flex;align-items:center;gap:4px;z-index:5">
-        <button onclick="doZoom(1.4)" title="Acercar" style="width:26px;height:26px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
+        <button onclick="doZoom(1.4)" title="Acercar" style="width:30px;height:30px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center">+</button>
         <span id="zoom-badge" style="font-size:10px;font-family:var(--font-mono,monospace);color:var(--color-text-tertiary);min-width:28px;text-align:center">1×</span>
-        <button onclick="doZoom(1/1.4)" title="Alejar" style="width:26px;height:26px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center">−</button>
-        <button onclick="resetZoom()" title="Restablecer vista" style="width:26px;height:26px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-tertiary);cursor:pointer;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center">⊙</button>
+        <button onclick="doZoom(1/1.4)" title="Alejar" style="width:30px;height:30px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-secondary);cursor:pointer;font-size:16px;line-height:1;display:flex;align-items:center;justify-content:center">−</button>
+        <button onclick="resetZoom()" title="Restablecer vista" style="width:30px;height:30px;border:0.5px solid var(--color-border-secondary);border-radius:6px;background:var(--color-background-primary);color:var(--color-text-tertiary);cursor:pointer;font-size:11px;line-height:1;display:flex;align-items:center;justify-content:center">⊙</button>
       </div>
     </div>
     <div class="side-panel">
@@ -528,16 +528,31 @@ let ctxs={},dims={};
 let zoom={scale:1,tx:0,ty:0};
 const ZOOM_MIN=1,ZOOM_MAX=14;
 function resetZoom(){zoom={scale:1,tx:0,ty:0};updateZoomBadge();redrawMain();}
-function doZoom(factor){const{cx,cy}=getD('sc');const newScale=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoom.scale*factor));const ratio=newScale/zoom.scale;zoom.tx=zoom.tx*ratio;zoom.ty=zoom.ty*ratio;zoom.scale=newScale;clampPan();updateZoomBadge();redrawMain();const c=document.getElementById('sc');if(c)c.style.cursor=zoom.scale>1.05?'grab':'crosshair';}
-function clampPan(){const{R}=getD('sc');const mp=(zoom.scale-1)*R*1.2;zoom.tx=Math.max(-mp,Math.min(mp,zoom.tx));zoom.ty=Math.max(-mp,Math.min(mp,zoom.ty));}
+function doZoom(factor,pivotX,pivotY){
+  const{cx,cy}=getD('sc');
+  const px=pivotX!==undefined?pivotX:cx;
+  const py=pivotY!==undefined?pivotY:cy;
+  const newScale=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoom.scale*factor));
+  const ratio=newScale/zoom.scale;
+  /* Correct zoom-to-cursor: tx' = tx*ratio + (px-cx)*(1-ratio)
+     Derivation: world point under cursor (px,py) must stay fixed.
+     gr = (px-cx-tx)/(R*s)  must equal  (px-cx-tx')/(R*s')
+     => tx' = tx*ratio + (px-cx)*(1-ratio) */
+  zoom.tx=zoom.tx*ratio+(px-cx)*(1-ratio);
+  zoom.ty=zoom.ty*ratio+(py-cy)*(1-ratio);
+  zoom.scale=newScale;
+  clampPan();updateZoomBadge();redrawMain();
+  const c=document.getElementById('sc');if(c)c.style.cursor=zoom.scale>1.05?'grab':'crosshair';
+}
+function clampPan(){const{W,H,cx,cy,R}=getD('sc');const mp=R*zoom.scale*0.98;zoom.tx=Math.max(-mp,Math.min(mp,zoom.tx));zoom.ty=Math.max(-mp,Math.min(mp,zoom.ty));}
 function updateZoomBadge(){const el=document.getElementById('zoom-badge');if(el)el.textContent=zoom.scale<1.05?'1×':`${zoom.scale.toFixed(1)}×`;}
 
 function setupCanvas(id){
   const c=document.getElementById(id);if(!c)return;
   const wrap=c.parentElement;
-  const s=Math.min(wrap.clientWidth-20,wrap.clientHeight||520,500);
+  const s=Math.min(wrap.clientWidth-12,window.innerHeight-160,800);
   c.width=s;c.height=s;
-  dims[id]={W:s,H:s,cx:s/2,cy:s/2,R:s*0.43};
+  dims[id]={W:s,H:s,cx:s/2,cy:s/2,R:s*0.44};
   ctxs[id]=c.getContext('2d');
   return ctxs[id];
 }
@@ -589,27 +604,87 @@ function getC(){
 function drawSmith(cid,extraFn){
   const ctx=ctxs[cid];if(!ctx)return;
   const{W,H,cx,cy,R}=getD(cid);const c=getC();
-  /* label font scales with zoom so text stays readable */
-  const zs=cid==='sc'?zoom.scale:1;
-  const lblBase=Math.max(9,Math.min(14,9*zs));
+  /* Zoom factors: s=zoom.scale, tx/ty = zoom.tx/ty (only for main chart) */
+  const s=cid==='sc'?zoom.scale:1;
+  const tx=cid==='sc'?zoom.tx:0;
+  const ty=cid==='sc'?zoom.ty:0;
+  /* Convert world (wx,wy) and world-radius wr to zoomed canvas coords */
+  const zx=(wx)=>(wx-cx)*s+cx+tx;
+  const zy=(wy)=>(wy-cy)*s+cy+ty;
+  const zr=(wr)=>wr*s;
+  /* Base font size: 12px at zoom=1, scales up with zoom */
+  const fs=Math.max(12,Math.min(20,12*s));
   ctx.clearRect(0,0,W,H);
-  /* apply zoom+pan transform for main chart */
-  if(cid==='sc'){ctx.save();ctx.translate(cx+zoom.tx,cy+zoom.ty);ctx.scale(zoom.scale,zoom.scale);ctx.translate(-cx,-cy);}
-  ctx.beginPath();ctx.arc(cx,cy,R,0,PI*2);ctx.fillStyle=c.bg;ctx.fill();
-  if(layers.ang){[30,60,90,120,150,180].forEach(a=>{const rad=a*PI/180;ctx.beginPath();ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(-rad),cy+R*Math.sin(-rad));ctx.moveTo(cx,cy);ctx.lineTo(cx+R*Math.cos(rad),cy+R*Math.sin(rad));ctx.strokeStyle=c.ang;ctx.lineWidth=0.5;ctx.stroke();});}
-  if(layers.r){[0,0.2,0.5,1,2,5].forEach(rn=>{const cr=R/(1+rn),ccx=cx+R-cr;ctx.beginPath();ctx.arc(ccx,cy,cr,0,PI*2);ctx.strokeStyle=c.rC;ctx.lineWidth=rn===1?1.2:0.6;ctx.setLineDash([]);ctx.stroke();});}
-  if(layers.x){[0.2,0.5,1,2,5].forEach(xn=>{[1,-1].forEach(sg=>{const rx=R/xn,cy2=cy-sg*(R+rx);ctx.save();ctx.beginPath();ctx.arc(cx,cy,R,0,PI*2);ctx.clip();ctx.beginPath();ctx.arc(cx+R,cy2,rx,0,PI*2);ctx.strokeStyle=c.xC;ctx.lineWidth=xn===1?0.9:0.55;ctx.stroke();ctx.restore();});});ctx.strokeStyle=c.ang;ctx.lineWidth=0.7;ctx.setLineDash([4,3]);ctx.beginPath();ctx.moveTo(cx-R,cy);ctx.lineTo(cx+R,cy);ctx.stroke();ctx.setLineDash([]);}
-  if(layers.adm){[0,0.2,0.5,1,2,5].forEach(rn=>{const cr=R/(1+rn),ccx=cx-R+cr;ctx.beginPath();ctx.arc(ccx,cy,cr,0,PI*2);ctx.strokeStyle=c.admC;ctx.lineWidth=0.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);});}
-  if(layers.swr&&swrVal>1.001){const gm=(swrVal-1)/(swrVal+1);ctx.beginPath();ctx.arc(cx,cy,gm*R,0,PI*2);ctx.strokeStyle=c.swr;ctx.lineWidth=1.3;ctx.setLineDash([5,3]);ctx.stroke();ctx.setLineDash([]);if(layers.lbl){const fsS=Math.max(9,Math.min(13,9*zs));ctx.fillStyle=c.swr;ctx.font=`500 ${fsS}px var(--font-sans,sans-serif)`;ctx.textAlign='center';ctx.fillText(`ROE ${parseFloat(swrVal).toFixed(1)}`,cx,cy-gm*R-4);}}
-  ctx.beginPath();ctx.arc(cx,cy,R,0,PI*2);ctx.strokeStyle=c.bnd;ctx.lineWidth=1.5;ctx.stroke();
-  if(layers.lbl){ctx.font=`400 ${lblBase}px var(--font-sans,sans-serif)`;ctx.fillStyle=c.fg2;[0,0.2,0.5,1,2,5].forEach(rn=>{const p=g2c(cid,z2g(rn,0).r,0);ctx.textAlign='center';ctx.fillText(rn===0?'0':rn.toString(),p.x,cy+12);});[0.5,1,2].forEach(xn=>{[1,-1].forEach(sg=>{const g=z2g(0,xn*sg),p=g2c(cid,g.r,g.i);ctx.textAlign='left';ctx.fillText(`${sg>0?'+':'−'}j${xn}`,p.x+3,p.y);});});ctx.fillStyle=c.fg;ctx.font=`500 ${lblBase}px var(--font-sans,sans-serif)`;ctx.textAlign='center';ctx.fillText('R/Z₀',cx,cy+23);}
+  /* ── Background fill inside chart boundary ── */
+  ctx.beginPath();ctx.arc(zx(cx),zy(cy),zr(R),0,PI*2);ctx.fillStyle=c.bg;ctx.fill();
+  /* ── Angle lines ── */
+  if(layers.ang){[30,60,90,120,150,180].forEach(a=>{
+    const rad=a*PI/180;
+    ctx.beginPath();
+    ctx.moveTo(zx(cx),zy(cy));ctx.lineTo(zx(cx+R*Math.cos(-rad)),zy(cy+R*Math.sin(-rad)));
+    ctx.moveTo(zx(cx),zy(cy));ctx.lineTo(zx(cx+R*Math.cos(rad)),zy(cy+R*Math.sin(rad)));
+    ctx.strokeStyle=c.ang;ctx.lineWidth=0.5*s;ctx.stroke();
+  });}
+  /* ── R=const circles ── */
+  if(layers.r){[0,0.2,0.5,1,2,5].forEach(rn=>{
+    const cr=R/(1+rn),wcx=cx+R-cr;
+    ctx.beginPath();ctx.arc(zx(wcx),zy(cy),zr(cr),0,PI*2);
+    ctx.strokeStyle=c.rC;ctx.lineWidth=rn===1?1.5:0.8;ctx.setLineDash([]);ctx.stroke();
+  });}
+  /* ── X=const arcs (clip to main circle) ── */
+  if(layers.x){
+    [0.2,0.5,1,2,5].forEach(xn=>{[1,-1].forEach(sg=>{
+      const rx=R/xn,wcy2=cy-sg*(R+rx);
+      ctx.save();
+      ctx.beginPath();ctx.arc(zx(cx),zy(cy),zr(R),0,PI*2);ctx.clip();
+      ctx.beginPath();ctx.arc(zx(cx+R),zy(wcy2),zr(rx),0,PI*2);
+      ctx.strokeStyle=c.xC;ctx.lineWidth=xn===1?1.1:0.7;ctx.stroke();
+      ctx.restore();
+    });});
+    ctx.strokeStyle=c.ang;ctx.lineWidth=0.7;ctx.setLineDash([4,3]);
+    ctx.beginPath();ctx.moveTo(zx(cx-R),zy(cy));ctx.lineTo(zx(cx+R),zy(cy));ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  /* ── Admittance circles ── */
+  if(layers.adm){[0,0.2,0.5,1,2,5].forEach(rn=>{
+    const cr=R/(1+rn),wcx=cx-R+cr;
+    ctx.beginPath();ctx.arc(zx(wcx),zy(cy),zr(cr),0,PI*2);
+    ctx.strokeStyle=c.admC;ctx.lineWidth=0.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);
+  });}
+  /* ── SWR circle ── */
+  if(layers.swr&&swrVal>1.001){
+    const gm=(swrVal-1)/(swrVal+1);
+    ctx.beginPath();ctx.arc(zx(cx),zy(cy),zr(gm*R),0,PI*2);
+    ctx.strokeStyle=c.swr;ctx.lineWidth=1.5;ctx.setLineDash([6,3]);ctx.stroke();ctx.setLineDash([]);
+    if(layers.lbl){
+      const lp=g2c(cid,0,-gm);
+      ctx.fillStyle=c.swr;ctx.font=`500 ${fs}px var(--font-sans,sans-serif)`;
+      ctx.textAlign='center';ctx.fillText(`ROE ${parseFloat(swrVal).toFixed(1)}`,lp.x,lp.y-5);
+    }
+  }
+  /* ── Boundary circle ── */
+  ctx.beginPath();ctx.arc(zx(cx),zy(cy),zr(R),0,PI*2);ctx.strokeStyle=c.bnd;ctx.lineWidth=2.0;ctx.stroke();
+  /* ── Labels ── */
+  if(layers.lbl){
+    ctx.font=`400 ${fs}px var(--font-sans,sans-serif)`;ctx.fillStyle=c.fg2;
+    [0,0.2,0.5,1,2,5].forEach(rn=>{
+      const p=g2c(cid,z2g(rn,0).r,0);
+      ctx.textAlign='center';ctx.fillText(rn===0?'0':rn.toString(),p.x,p.y+fs+4);
+    });
+    [0.5,1,2].forEach(xn=>{[1,-1].forEach(sg=>{
+      const g=z2g(0,xn*sg),p=g2c(cid,g.r,g.i);
+      ctx.textAlign='left';ctx.fillText(`${sg>0?'+':'−'}j${xn}`,p.x+5,p.y+4);
+    });});
+    ctx.fillStyle=c.fg;ctx.font=`500 ${fs}px var(--font-sans,sans-serif)`;
+    ctx.textAlign='center';
+    const axisLbl=g2c(cid,0,0);
+    ctx.fillText('R/Z₀',axisLbl.x,axisLbl.y+fs*2+4);
+  }
   if(layers.sp){drawDot(cid,'#ba7517',z2g(0,0),'Z₀',c);drawDot(cid,'#e24b4a',{r:-0.998,i:0},'CC',c);drawDot(cid,'#378add',{r:0.998,i:0},'CA',c);}
-  /* restore transform so extraFn and points use normal coords */
-  if(cid==='sc')ctx.restore();
   if(extraFn)extraFn(ctx,getD(cid),c);
 }
-function drawDot(cid,col,g,lbl,c){const ctx=ctxs[cid];const p=g2c(cid,g.r,g.i);const zs2=cid==='sc'?zoom.scale:1;const fs=Math.max(9,Math.min(13,9*zs2));ctx.beginPath();ctx.arc(p.x,p.y,Math.max(4,4*Math.min(zs2,2)),0,PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.75)';ctx.lineWidth=1;ctx.stroke();if(layers.lbl){ctx.fillStyle=c.fg2;ctx.font=`400 ${fs}px var(--font-sans,sans-serif)`;ctx.textAlign='center';ctx.fillText(lbl,p.x,p.y-7-2*(zs2-1));}}
-function drawPoints(cid){const ctx=ctxs[cid];if(!ctx)return;const{cx,cy,R}=getD(cid);const c=getC();points.forEach((pt,i)=>{const col=COLS[i%COLS.length];const p=g2c(cid,pt.g.r,pt.g.i);if(i===selPt||i===points.length-1){const gm=Math.hypot(pt.g.r,pt.g.i);if(gm>0.01){ctx.beginPath();ctx.arc(cx,cy,gm*R,0,PI*2);ctx.strokeStyle=col+'55';ctx.lineWidth=0.8;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);}}ctx.beginPath();ctx.arc(p.x,p.y,5.5,0,PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.7)';ctx.lineWidth=1.2;ctx.stroke();if(layers.lbl){const fsP=Math.max(9,Math.min(13,9*zoom.scale));ctx.fillStyle=col;ctx.font=`500 ${fsP}px var(--font-sans,sans-serif)`;ctx.textAlign='left';/* Use Z* label if tagged, otherwise P# */const lbl=pt._label?`Z*(P${i})`:pt._tsLabel?pt._tsLabel:`P${i+1}`;ctx.fillText(lbl,p.x+8+2*(zoom.scale-1),p.y-2-2*(zoom.scale-1));}/* Z* ring */if(pt._label==='Z*'){ctx.beginPath();ctx.arc(p.x,p.y,8,0,PI*2);ctx.strokeStyle='#d85a30';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);}});}
+function drawDot(cid,col,g,lbl,c){const ctx=ctxs[cid];const p=g2c(cid,g.r,g.i);const zs2=cid==='sc'?zoom.scale:1;const fs=Math.max(12,Math.min(18,12*zs2));const dr=Math.max(5,5*Math.min(zs2,2));ctx.beginPath();ctx.arc(p.x,p.y,dr,0,PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=1.5;ctx.stroke();if(layers.lbl){ctx.fillStyle=c.fg2;ctx.font=`400 ${fs}px var(--font-sans,sans-serif)`;ctx.textAlign='center';ctx.fillText(lbl,p.x,p.y-dr-4);}}
+function drawPoints(cid){const ctx=ctxs[cid];if(!ctx)return;const{cx,cy,R}=getD(cid);const c=getC();points.forEach((pt,i)=>{const col=COLS[i%COLS.length];const p=g2c(cid,pt.g.r,pt.g.i);if(i===selPt||i===points.length-1){const gm=Math.hypot(pt.g.r,pt.g.i);if(gm>0.01){ctx.beginPath();ctx.arc(cx,cy,gm*R,0,PI*2);ctx.strokeStyle=col+'55';ctx.lineWidth=0.8;ctx.setLineDash([4,3]);ctx.stroke();ctx.setLineDash([]);}}ctx.beginPath();ctx.arc(p.x,p.y,7,0,PI*2);ctx.fillStyle=col;ctx.fill();ctx.strokeStyle='rgba(255,255,255,0.8)';ctx.lineWidth=1.5;ctx.stroke();if(layers.lbl){const fsP=Math.max(12,Math.min(18,12*zoom.scale));ctx.fillStyle=col;ctx.font=`500 ${fsP}px var(--font-sans,sans-serif)`;ctx.textAlign='left';/* Use Z* label if tagged, otherwise P# */const lbl=pt._label?`Z*(P${i})`:pt._tsLabel?pt._tsLabel:`P${i+1}`;ctx.fillText(lbl,p.x+8+2*(zoom.scale-1),p.y-2-2*(zoom.scale-1));}/* Z* ring */if(pt._label==='Z*'){ctx.beginPath();ctx.arc(p.x,p.y,8,0,PI*2);ctx.strokeStyle='#d85a30';ctx.lineWidth=1.5;ctx.setLineDash([3,2]);ctx.stroke();ctx.setLineDash([]);}});}
 function onModeChange(){const m=document.getElementById('inp-mode').value;const la=document.getElementById('lbl-a'),lb=document.getElementById('lbl-b');const gb=document.getElementById('grp-b');const a=document.getElementById('inp-a'),b=document.getElementById('inp-b');if(m==='z'){la.textContent='R (Ω)';lb.textContent='X (Ω)';gb.style.display='';a.value=75;b.value=25;}else if(m==='y'){la.textContent='G (mS)';lb.textContent='B (mS)';gb.style.display='';a.value=10;b.value=5;}else if(m==='gamma'){la.textContent='Γ real (a)';lb.textContent='Γ imag (b)';gb.style.display='';a.value=0.2;b.value=0.3;}else if(m==='rl'){la.textContent='RL (dB)';gb.style.display='none';a.value=15;}else if(m==='vswr'){la.textContent='VSWR';gb.style.display='none';a.value=2;}clearE();}
 function plotMain(){const m=document.getElementById('inp-mode').value;const av=parseFloat(document.getElementById('inp-a').value);const bv=parseFloat(document.getElementById('inp-b').value)||0;let gr,gi;clearE();if(m==='z'){if(isNaN(av)||av<0)return er('R ≥ 0');if(isNaN(bv))return er('X inválido');const g=z2g(av/Z0,bv/Z0);gr=g.r;gi=g.i;}else if(m==='y'){if(isNaN(av)||av<0)return er('G ≥ 0 mS');const Zmag=av*av*1e-6+(bv||0)*(bv||0)*1e-6;if(Zmag<1e-20)return er('Admitancia = 0: circuito abierto');const Zr=av*1e-3/((av*av+bv*bv)*1e-6),Zi=-(bv||0)*1e-3/((av*av+bv*bv)*1e-6);const g=z2g(Zr/Z0,Zi/Z0);gr=g.r;gi=g.i;}else if(m==='gamma'){if(isNaN(av)||isNaN(bv))return er('Valores inválidos');if(Math.hypot(av,bv)>1.001)return er('|Γ| debe ser ≤ 1');gr=av;gi=bv;}else if(m==='rl'){if(isNaN(av)||av<0)return er('RL ≥ 0 dB');gr=Math.pow(10,-av/20);gi=0;}else if(m==='vswr'){if(isNaN(av)||av<1)return er('VSWR ≥ 1');gr=(av-1)/(av+1);gi=0;}if(!isFinite(gr)||!isFinite(gi))return er('Resultado no finito');const mag=Math.hypot(gr,gi);if(mag>1){gr/=mag;gi/=mag;}const freq=parseFloat(document.getElementById('inp-freq').value)||1000;if(freq<=0)return er('Frecuencia > 0');addPt(gr,gi,freq);}
 function addPt(gr,gi,freq){const p=calcParams(gr,gi);p.freq=freq;points.push({g:{r:gr,i:gi},p,freq});selPt=points.length-1;swrVal=Math.min(p.vswr,10);document.getElementById('swr-sl').value=swrVal;document.getElementById('swr-v').textContent=f(swrVal,2);showRes(p,freq);updatePtsList();redrawMain();}
@@ -630,15 +705,9 @@ function setupMainEvents(){
   c.addEventListener('wheel',e=>{
     e.preventDefault();
     const{px,py}=getCanvasXY(c,e);
-    const{cx,cy}=getD('sc');
     const factor=e.deltaY<0?1.18:1/1.18;
-    const newScale=Math.max(ZOOM_MIN,Math.min(ZOOM_MAX,zoom.scale*factor));
-    /* zoom toward cursor position */
-    const ratio=newScale/zoom.scale;
-    zoom.tx=(zoom.tx+px-cx)*ratio-(px-cx);
-    zoom.ty=(zoom.ty+py-cy)*ratio-(py-cy);
-    zoom.scale=newScale;
-    clampPan();updateZoomBadge();redrawMain();
+    /* zoom toward cursor: keep gamma point under cursor fixed */
+    doZoom(factor,px,py);
   },{passive:false});
 
   /* ── PINCH ZOOM (touch) ── */

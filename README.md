@@ -18,7 +18,8 @@ Este proyecto fue desarrollado por **Pedro Andrés Viloria Colón**, estudiante 
   * Return Loss (dB)
   * Relación de Onda Estacionaria (ROE / VSWR)
 * 📁 **Soporte Touchstone (.s1p):** Importa archivos de parámetros S11 (como barridos de antenas o redes) y visualiza la respuesta en frecuencia directamente en la carta y en formato tabular.
-* 🧮 **Cálculos en Tiempo Real:** * Diagnóstico de adaptación y parámetros de línea: Mismatch Loss, Potencia reflejada/transmitida y ROE.
+* 🧮 **Cálculos en Tiempo Real:**
+  * Diagnóstico de adaptación y parámetros de línea: Mismatch Loss, Potencia reflejada/transmitida y ROE.
   * Extracción de componentes equivalentes ($L, C, Q$).
   * Cálculo rápido de impedancias conjugadas ($Z^*$).
 * 💾 **Exportación de Datos:** Descarga tus puntos de análisis en formato **CSV**, o exporta el gráfico interactivo directamente como imagen **PNG** o vector **SVG** para informes académicos o profesionales.
